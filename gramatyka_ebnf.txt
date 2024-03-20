@@ -50,9 +50,9 @@ parameter ::= declaration;
 
 
 type ::= "int"
-		| "float"
-		| "string"
-		| "bool";
+	   | "float"
+	   | "string"
+	   | "bool";
 		
 expression ::= and_term, {"||", and_term};
 
@@ -76,8 +76,8 @@ unary_term ::= ["-"], casted_term;
 casted_term ::= term, {"as", type};
 
 term ::= literal
-		| object_access
-		| "(", expression, ")";
+	   | object_access
+	   | "(", expression, ")";
 		
 object_access ::= item, {".", item};
 
@@ -106,14 +106,14 @@ escape_char ::= "\";
 digit ::= digit_positive | "0";
 
 digit_positive ::= "1" 
-				  | "2" 
-				  | "3" 
-				  | "4" 
-				  | "5" 
-				  | "6" 
-				  | "7" 
-				  | "8" 
-				  | "9";
+				 | "2" 
+				 | "3" 
+				 | "4" 
+				 | "5" 
+				 | "6" 
+				 | "7" 
+				 | "8" 
+				 | "9";
 
 
 identifier ::= letter, {alphanumeric};
