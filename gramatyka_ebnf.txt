@@ -1,0 +1,131 @@
+program ::= { declaration_statement
+			| function_declaration
+			| aspect_declaration};
+
+declaration ::= type, identifier;
+
+function_declaration ::= "func", identifier, "(", [ parameters ], ")", ":", return_type, block;
+
+return_type ::= type | "null";
+
+
+block ::= "{", { statement }, "}";
+
+statement ::= selection_statement
+			| declaration_statement
+			| assignment_or_call_statement
+			| iteration_statement
+			| return_statement;
+
+declaration_statement ::= declaration, [ "=", expression ];
+		
+selection_statement ::= "if", "(", condition, ")", block, ["else", block];
+
+condition ::= expression;
+
+iteration_statement ::= "for", identifier, "in", expression, block
+					  | "while", "(", condition, ")", block;
+
+assignment_or_call_statement ::= object_access, ["=", expression ] ";";
+
+return_statement ::= "return", [expression], ";"; 
+
+
+aspect_declaration ::= "aspect", identifier, ":", aspect_trigger, block;
+
+aspect_trigger ::= "on", aspect_target, aspect_event, "like", regular_expression;
+
+regular_expression ::= string;
+
+
+aspect_event ::= "start" 
+				| "end" 
+				| "call";
+
+aspect_target ::= "func";
+
+parameters ::= [parameter, { ",", parameter }];
+
+parameter ::= declaration;
+
+
+type ::= "int"
+	   | "float"
+	   | "string"
+	   | "bool";
+		
+expression ::= and_term, {"||", and_term};
+
+and_term ::= relation_term, { "&&", relation_term};
+
+relation_term ::= additive_term, [relation_operator, additive_term];
+
+relation_operator ::= ">=" 
+					| ">"
+					| "<="
+					| "<"
+					| "=="
+					| "!=";
+					 
+additive_term ::= multiplicative_term, { ("+" | "-"), multiplicative_term};
+
+multiplicative_term ::= unary_term, { ("*" | "/" ), unary_term};  
+
+unary_term ::= ["-"], casted_term;
+
+casted_term ::= term, {"as", type};
+
+term ::= literal
+	   | object_access
+	   | "(", expression, ")";
+		
+object_access ::= item, {".", item};
+
+item ::= identifier_or_call, {"[", int, "]"};
+		
+identifier_or_call ::= identifier, [ "(", parameters, ")" ];
+
+literal ::= int| float | bool | string;
+
+int ::= "0" | digit_positive, {digit};
+
+float ::= int, ".", digit, { digit };
+
+string ::= '"' , { character }, '"';
+
+bool ::= "true" | "false";
+
+newline ::= "\n" 
+		  | "\r\n" 
+		  | "\n\r";
+		   
+tab ::= "\t";
+
+escape_char ::= "\";	 
+	 
+digit ::= digit_positive | "0";
+
+digit_positive ::= "1" 
+				 | "2" 
+				 | "3" 
+				 | "4" 
+				 | "5" 
+				 | "6" 
+				 | "7" 
+				 | "8" 
+				 | "9";
+
+
+identifier ::= letter, {alphanumeric};
+
+alphanumeric ::= letter | digit;
+			   
+letter ::= "A" | "B" | "C" | "D" | "E" | "F" | "G"
+		 | "H" | "I" | "J" | "K" | "L" | "M" | "N"
+		 | "O" | "P" | "Q" | "R" | "S" | "T" | "U"
+		 | "V" | "W" | "X" | "Y" | "Z" | "a" | "b"
+		 | "c" | "d" | "e" | "f" | "g" | "h" | "i"
+		 | "j" | "k" | "l" | "m" | "n" | "o" | "p"
+		 | "q" | "r" | "s" | "t" | "u" | "v" | "w"
+		 | "x" | "y" | "z";
+
