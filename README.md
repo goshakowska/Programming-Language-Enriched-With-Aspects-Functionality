@@ -264,7 +264,7 @@ Deklaracja funkcji:
 
 ```
 # SZABLON funkcji
-func exampleFunction(type: variableName): returnType  # jeśli funkcja nic nie zwraca
+func exampleFunction(type variableName): returnType  # jeśli funkcja nic nie zwraca
         {                                             # to powinno być to
             # function body;                          # jawnie napisane - null
             return  # return value;
@@ -277,7 +277,7 @@ Deklaracja aspektu:
 
 ```# SZABLON aspektu
 
-aspect exampleAspect: on func start/end/call like "...":  # zamiast start możliwe są
+aspect exampleAspect: on start/end/call like "..."        # zamiast start możliwe są
                                                           # "end" oraz "call"
         {
             # aspect body;
@@ -293,7 +293,7 @@ Przykład aspektu oraz jak on oddziałuje z funkcją:
 ```
 # przykład komunikacji aspektu z funkcją
 
-aspect logResult: on func end like "write"
+aspect logResult: on end like "write"
 {
     str firstPrompt = "Function of a name: ";
     str funcName = func.name;
@@ -309,7 +309,7 @@ aspect logResult: on func end like "write"
     
 }
 
-aspect logParams: on func start like "write"
+aspect logParams: on start like "write"
 {
     str firstPrompt = "Function of a name: ";
     str funcName = func.name;
@@ -344,7 +344,7 @@ aspect logParams: on func start like "write"
 }
 
 
-func writeCirclePerimeter(int: radius) : float
+func writeCirclePerimeter(int radius) : float
 {
     logResult.enabled = true;  # deklaratywnie włączamy aspekt wewnątrz funkcji
     float area = 2 * 4.13 * radius;
@@ -353,7 +353,7 @@ func writeCirclePerimeter(int: radius) : float
 
 # gdy parametr enable jest ustawiony na false aspekt nie wpływa na funkcję
 
-func writeCircleArea(int: radius) : float
+func writeCircleArea(int radius) : float
 {
     logParams.enabled = true;
     logResult.enabled = false;  # deklaratywnie wyłączamy aspekt wewnątrz funkcji
