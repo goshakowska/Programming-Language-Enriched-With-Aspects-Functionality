@@ -7,7 +7,7 @@
 
 ### Plan projektu
 - [x] Dokumentacja wstępna (termin: 20.03)
-- [ ] Analizator leksykalny (termin 10.04)
+- [x] Analizator leksykalny (termin 10.04)
 - [ ] Analizator składniowy + drzewo AST (termin 8.05)
 - [ ] Zakończenie projektu (termin 5.06)
 
