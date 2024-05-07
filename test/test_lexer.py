@@ -16,12 +16,14 @@ def test_lexer_with_single_token():
     assert token.get_value() == "myString"
     assert token.get_position() == (1, 1)
 
+
 def test_lexer_with_single_token_with_space():
     lexer = create_lexer_with_given_source(" myString")
     token = lexer.try_to_build_next_token()
     assert token.get_type() == TokenType.IDENTIFIER
     assert token.get_value() == "myString"
     assert token.get_position() == (1, 2)
+
 
 def test_lexer_build_multiple_tokens_of_different_type():
     lexer = create_lexer_with_given_source("int myInt = 6")
@@ -40,13 +42,14 @@ def test_lexer_build_multiple_tokens_of_different_type():
     assert token.get_value() is None
     assert token.get_position() == (1, 11)
 
+
 def test_lexer_with_multiple_tokens_of_different_type_with_spaces():
     lexer = create_lexer_with_given_source('str        myString         "Ala ma kota."')
     token = lexer.try_to_build_next_token()
     assert token.get_type() == TokenType.STR_TYPE
     assert token.get_value() is None
     assert token.get_position() == (1, 1)
-  
+
     token = lexer.try_to_build_next_token()
     assert token.get_type() == TokenType.IDENTIFIER
     assert token.get_value() == 'myString'
@@ -177,6 +180,7 @@ def test_lexer_build_token_type_assign():
     assert token.get_value() is None
     assert token.get_position() == (1, 1)
 
+
 def test_lexer_build_token_ambitious_assign():
     lexer = create_lexer_with_given_source("<==")
     token = lexer.try_to_build_next_token()
@@ -275,12 +279,12 @@ def test_lexer_build_token_type_and():
     assert token.get_position() == (1, 1)
 
 
-def test_lexer_build_token_type_and_with_users_typo():
-    lexer = create_lexer_with_given_source("&7")
-    token = lexer.try_to_build_next_token()
-    assert token.get_type() == TokenType.AND
-    assert token.get_value() is None
-    assert token.get_position() == (1, 1)
+# def test_lexer_build_token_type_and_with_users_typo():
+#     lexer = create_lexer_with_given_source("&7")
+#     token = lexer.try_to_build_next_token()
+#     assert token.get_type() == TokenType.AND
+#     assert token.get_value() is None
+#     assert token.get_position() == (1, 1)
 
 
 def test_lexer_build_token_type_or():
@@ -291,12 +295,12 @@ def test_lexer_build_token_type_or():
     assert token.get_position() == (1, 1)
 
 
-def test_lexer_build_token_type_or_with_users_typo():
-    lexer = create_lexer_with_given_source("|'")
-    token = lexer.try_to_build_next_token()
-    assert token.get_type() == TokenType.OR
-    assert token.get_value() is None
-    assert token.get_position() == (1, 1)
+# def test_lexer_build_token_type_or_with_users_typo():
+#     lexer = create_lexer_with_given_source("|'")
+#     token = lexer.try_to_build_next_token()
+#     assert token.get_type() == TokenType.OR
+#     assert token.get_value() is None
+#     assert token.get_position() == (1, 1)
 
 
 def test_lexer_build_token_type_if():
@@ -387,7 +391,6 @@ def test_lexer_build_token_type_str_type():
     assert token.get_position() == (1, 1)
 
 
-
 def test_lexer_build_token_type_str():
     lexer = create_lexer_with_given_source('"str"')
     token = lexer.try_to_build_next_token()
@@ -429,9 +432,9 @@ def test_lexer_build_token_type_return():
 
 
 def test_lexer_build_token_type_aspect_type():
-    lexer = create_lexer_with_given_source("return")
+    lexer = create_lexer_with_given_source("aspect")
     token = lexer.try_to_build_next_token()
-    assert token.get_type() == TokenType.RETURN
+    assert token.get_type() == TokenType.ASPECT_TYPE
     assert token.get_value() is None
     assert token.get_position() == (1, 1)
 

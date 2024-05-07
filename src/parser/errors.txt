@@ -1,0 +1,48 @@
+MissingParenthesis
+MissingSemicolon
+IncorrectVariableType
+
+_must_be_and_consume()
+unexpected_token_type(expected_type, received_type)
+
+_must_be_in_set_and_consume()
+unexpected_token_type(expected_types, received_type)
+
+parse_program()
+FunctionRedefinitionError(function_name)
+StatementRedefinitionError(statement_name)
+AspectRedefinitionError(aspect_name)
+
+_must_be_and_consume(TokenType.OPENING_BRACKET)
+MissingOpeningParenthesisError(position, function_name, token)
+
+_must_be_and_consume(TokenType.CLOSING_BRACKET, SyntaxError)
+MissingClosingParenthesisError(position, function_name, token)
+
+if not return_type:
+    raise NoReturnTypeError(position, function_name)
+
+if not block:
+    raise NoCodeBlockError(position, function name) 
+
+_must_be_and_consume(TokenType.ON, SyntaxError)
+_must_be_and_consume(TokenType.LIKE, SyntaxError)
+WrongAspectDeclarationSyntaxError(position, aspect_name, missing_key_word)
+
+_must_be_in_set_and_consume(ASPECT_TARGETS, InvalidSyntaxError)
+InvalidAspectTargetError(position, aspect_name, received_aspect_target, expected_aspect_targets)
+
+_must_be_in_set_and_consume(ASPECT_EVENTS, InvalidSyntaxError)
+InvalidAspectEventError(position, aspect_name, received_aspect_event, expected_aspect_events)
+
+if right_additive_factor is None:
+    return InvalidSyntaxError()
+UncompleteRelationTerm(position, type, left_term)
+UncompletedAdditiveTerm(position, type, left_term)
+
+if not if_block:
+MissingIfStatement(position, received_token)
+
+if not else_block:
+MissingElseStatement(position, received_token)
+
