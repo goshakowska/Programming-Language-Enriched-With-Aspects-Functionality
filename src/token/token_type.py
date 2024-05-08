@@ -51,18 +51,13 @@ class TokenType(Enum):
     NULL = auto()  # null, return type of function
     COMMENT = auto()
 
-    FUNCTION_TYPE = auto()  # func
+    FUNCTION_TYPE = auto()  # func  # FUNCTION TODO
     RETURN = auto()  # return
 
-    ASPECT_TYPE = auto()  # aspect
+    ASPECT_TYPE = auto()  # aspect  # ASPECT TODO
     ASPECT_ON_START = auto()  # start
     ASPECT_ON_END = auto()  # end
     ASPECT_ON_CALL = auto()  # call
     ON = auto()  # on
     LIKE = auto()  # like
     AS = auto()  # type conversion function
-
-
-
-
-

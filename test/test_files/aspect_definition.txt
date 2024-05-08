@@ -1,0 +1,4 @@
+aspect logParams: on func start like write {  
+    int counter = 1;    
+    return counter;  
+}  

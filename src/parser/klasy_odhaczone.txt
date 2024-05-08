@@ -1,0 +1,42 @@
+Program: name, functions, aspects, statements
+
+AssignmentStatement: position, declaration, expression  # jak sprawdzam czy statementy są te same?
+FunctionDefinition: position, name, params, return_type
+AspectDefinition: position, name, target, event, regular_expression, type
+
+VariableDeclaration: position, name, type
+Identifier: position, name
+
+OrExpression: position, left, right, type
+AndExpression: position, left, right, type
+
+LessThanExpression: position, left, right, type
+GreaterThanExpression: position, left, right, type
+EqualExpression: position, left, right, type
+NotEqualExpression: position, left, right, type
+LessThanOrEqualExpression: position, left, right, type
+GreaterThanOrEqualExpression: position, left, right, type
+
+PlusExpression: position, left, right, type
+MinusExpression: position, left, right, type
+
+MultiplicationExpression: position, left, right, type
+DivisionExpression: position, left, right, type
+
+SelectionStatement: position, expression, if_block, else_block, type
+AssignmentStatement: position, expression, object_access, type
+ObjectAccess: position, item, dot_item, type
+IndexedItem: position, item, index, type
+Identifier: position, name, type
+FunctionCall: position, name, arguments, type
+ForStatement: position, iterator, iterable, execution_block, type  # sprawdzić, czy wszystkie typy mają w repr position
+WhileStatement: position, condition, execution_block, type
+ReturnStatement: position, expression, type
+UnaryTerm: position, term, type
+CastedTerm: position, term, casted_type, type
+BoolLiteral: position, term, type
+StrLiteral: position, term, type
+IntLiteral: position, term, type
+FloatLiteral: position, term, type
+
+
