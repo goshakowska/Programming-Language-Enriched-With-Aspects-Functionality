@@ -1,0 +1,6 @@
+int myInt = 6;
+func myFunc(int intParam) : int
+{
+    int outputInt = 6*2;
+    return outputInt;
+}

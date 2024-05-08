@@ -56,13 +56,12 @@ class MissingClosingParenthesisError(Exception):
 
 
 class MissingSemicolonError(Exception):
-    def __init__(self, position, statement_name) -> None:
+    def __init__(self, position) -> None:
         self.position = position
-        self.statement_name = statement_name
         # self.token = token
 
     def __str__(self):
-        return f"ERR! [{self.position}]: Missing semicolon in statement {self.statement} declaration."
+        return f"ERR! [{self.position}]: Missing semicolon."
 
 
 class NoReturnTypeError(Exception):
@@ -78,10 +77,60 @@ class NoExecutionBlockError(Exception):
     def __init__(self, position, statement_name) -> None:
         self.position = position
         self.statement_name = statement_name
-        # self.token = token
 
     def __str__(self):
         return f"ERR! [{self.position}]: No execution block provided in '{self.statement_name}' statement."
+
+
+class NoConditionBlockError(Exception):
+    def __init__(self, position, statement_name) -> None:
+        self.position = position
+        self.statement_name = statement_name
+
+    def __str__(self):
+        return f"ERR! [{self.position}]: No condition block provided in '{self.statement_name}' statement."
+
+
+class NoAssignmentExpressionError(Exception):
+    def __init__(self, position) -> None:
+        self.position = position
+
+    def __str__(self):
+        return f"ERR! [{self.position}]: No assignment expression provided in assignment statement."
+
+
+class NoIndexExpressionError(Exception):
+    def __init__(self, position, name) -> None:
+        self.position = position
+        self.name = name
+
+    def __str__(self):
+        return f"ERR! [{self.position}]: No index expression provided in indexed expression {self.name}."
+    
+
+class NoIteratorError(Exception):
+    def __init__(self, position) -> None:
+        self.position = position
+
+    def __str__(self):
+        return f"ERR! [{self.position}]: No iterator provided in 'for' statement."
+    
+
+class NoIterableError(Exception):
+    def __init__(self, position, iterator) -> None:
+        self.position = position
+        self.iterator = iterator
+
+    def __str__(self):
+        return f"ERR! [{self.position}]: No iterable provided for iterator {self.iterator} in 'for' statement."
+    
+
+class InvalidExpressionError(Exception):
+    def __init__(self, position) -> None:
+        self.position = position
+
+    def __str__(self):
+        return f"ERR! [{self.position}]: Invalid expression."
 
 
 # TODO: ma podać możliwe a co dostał w zamian

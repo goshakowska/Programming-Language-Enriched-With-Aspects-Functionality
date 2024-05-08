@@ -1,0 +1,1 @@
+float myFloat = 6.1 as int;

@@ -1,5 +1,5 @@
-from visitor import Visitor
-from ast_type import AstType
+from src.visitor.visitor import Visitor
+from src.ast_tree.ast_type import AstType
 
 
 class WhileStatement:

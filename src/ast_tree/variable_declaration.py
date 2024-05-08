@@ -1,4 +1,4 @@
-from visitor import Visitor
+from src.visitor.visitor import Visitor
 
 
 class VariableDeclaration:  # position, ast_type, name
