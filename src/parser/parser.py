@@ -2,44 +2,45 @@ from lexer.lexer import Lexer
 from token.token_type import TokenType
 from token.token import Token
 # from invalid_syntax_error import InvalidSyntaxError
-from ast.function_definiton import FunctionDefinition
-from ast.aspect_definition import AspectDefinition
-from ast.identifier import Identifier
-from ast.selection_statement import SelectionStatement
-from ast.function_call import FunctionCall
-from ast.variable_declaration import VariableDeclaration
-from ast.for_statement import ForStatement
-from ast.while_statement import WhileStatement
-from ast.return_statement import ReturnStatement
-from ast.assignment_statement import AssignmentStatement
-from ast.object_access import ObjectAccess
-from ast.indexed_item import IndexedItem
-from ast.unary_term import UnaryTerm
-from ast.casted_term import CastedTerm
+from ast_tree.function_definiton import FunctionDefinition
+from ast_tree.aspect_definition import AspectDefinition
+from ast_tree.identifier import Identifier
+from ast_tree.selection_statement import SelectionStatement
+from ast_tree.function_call import FunctionCall
+from ast_tree.variable_declaration import VariableDeclaration
+from ast_tree.for_statement import ForStatement
+from ast_tree.while_statement import WhileStatement
+from ast_tree.return_statement import ReturnStatement
+from ast_tree.assignment_statement import AssignmentStatement
+from ast_tree.object_access import ObjectAccess
+from ast_tree.indexed_item import IndexedItem
+from ast_tree.unary_term import UnaryTerm
+from ast_tree.casted_term import CastedTerm
 
-from ast.less_than_expression import LessThanExpression
-from ast.greater_than_expression import GreaterThanExpression
-from ast.equal_expression import EqualExpression
-from ast.not_equal_expression import NotEqualExpression
-from ast.less_than_or_equal_expression import LessThanOrEqualExpression
-from ast.greater_than_or_equal_expression import GreaterThanOrEqualExpression
+from ast_tree.less_than_expression import LessThanExpression
+from ast_tree.greater_than_expression import GreaterThanExpression
+from ast_tree.equal_expression import EqualExpression
+from ast_tree.not_equal_expression import NotEqualExpression
+from ast_tree.less_than_or_equal_expression import LessThanOrEqualExpression
+from ast_tree.greater_than_or_equal_expression import\
+      GreaterThanOrEqualExpression
 
-from ast.plus_expression import PlusExpression
-from ast.minus_expression import MinusExpression
+from ast_tree.plus_expression import PlusExpression
+from ast_tree.minus_expression import MinusExpression
 
-from ast.multiplication_expression import MultiplicationExpression
-from ast.division_expression import DivisionExpression
+from ast_tree.multiplication_expression import MultiplicationExpression
+from ast_tree.division_expression import DivisionExpression
 
-from ast.or_expression import OrExpression
-from ast.and_expression import AndExpression
+from ast_tree.or_expression import OrExpression
+from ast_tree.and_expression import AndExpression
 
-from ast.ast_type import AstType
-from ast.program import Program
+from ast_tree.ast_type import AstType
+from ast_tree.program import Program
 
-from ast.bool_literal import BoolLiteral
-from ast.str_literal import StrLiteral
-from ast.int_literal import IntLiteral
-from ast.float_literal import FloatLiteral
+from ast_tree.bool_literal import BoolLiteral
+from ast_tree.str_literal import StrLiteral
+from ast_tree.int_literal import IntLiteral
+from ast_tree.float_literal import FloatLiteral
 
 from parser_errors import UnexpectedTokenTypeError
 from parser_errors import FunctionRedefinitionError

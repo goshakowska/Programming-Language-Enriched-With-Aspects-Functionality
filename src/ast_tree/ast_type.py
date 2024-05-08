@@ -2,6 +2,7 @@ from enum import Enum, auto
 
 
 class AstType(Enum):
+    PROGRAM = auto()
     IDENITIFIER = auto()
 
     PLUS = auto()

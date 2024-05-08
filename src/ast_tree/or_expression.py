@@ -1,5 +1,5 @@
 from visitor import Visitor
-from ast.ast_type import AstType
+from ast_type import AstType
 
 
 class OrExpression:

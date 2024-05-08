@@ -2,15 +2,16 @@ from visitor import Visitor
 from ast_type import AstType
 
 
-class GreaterThanExpression:
+class PlusExpression:
     def __init__(self, position, left_term, right_term) -> None:
         self.position = position
         self.left_term = left_term
         self.right_term = right_term
-        self.type = AstType.GREATER_THAN
+        self.type = AstType.PLUS
 
     def __repr__(self):
-        return f"GreaterThanExpression({self.left_term}, {self.right_term})"
+        return f"PlusExpression({self.position}, {self.left_term},\
+              {self.right_term})"
 
     def accept(self, visitor: Visitor):
-        return visitor.visit_greater_than_expression(self)
+        return visitor.visit_plus_expression(self)

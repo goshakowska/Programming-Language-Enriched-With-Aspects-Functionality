@@ -1,4 +1,5 @@
 from visitor import Visitor
+from ast_type import AstType
 
 
 class AspectDefinition:
@@ -8,9 +9,11 @@ class AspectDefinition:
         self.target = target
         self.event = event
         self.regular_expression = regular_expression
+        self.type = AstType.ASPECT
 
     def __repr__(self):
-        return f"AspectDefinition({self.name}, {self.target}, {self.event}, {self.regular_expression})"
+        return f"AspectDefinition({self.position}, {self.name}, {self.target},\
+              {self.event}, {self.regular_expression})"
 
     def __eq__(self, other):
         return (isinstance(other, AspectDefinition) and

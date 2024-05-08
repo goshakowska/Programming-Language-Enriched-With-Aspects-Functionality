@@ -2,7 +2,7 @@ import io
 from src.lexer.lexer import Lexer
 from src.source.source import Source
 from src.token.token_type import TokenType
-from src.token.token import Token
+# from src.token.token import Token
 
 
 def create_lexer_with_given_source(string):
@@ -41,6 +41,29 @@ def test_lexer_build_multiple_tokens_of_different_type():
     assert token.get_type() == TokenType.ASSIGN
     assert token.get_value() is None
     assert token.get_position() == (1, 11)
+
+    token = lexer.try_to_build_next_token()
+    assert token.get_type() == TokenType.INT
+    assert token.get_value() == 6
+    assert token.get_position() == (1, 13)
+
+
+def test_lexer_build_multiple_tokens_of_different_type_2():
+    lexer = create_lexer_with_given_source(" 6 + 4 ")
+    token = lexer.try_to_build_next_token()
+    assert token.get_type() == TokenType.INT
+    assert token.get_value() == 6
+    assert token.get_position() == (1, 2)
+
+    token = lexer.try_to_build_next_token()
+    assert token.get_type() == TokenType.PLUS
+    assert token.get_value() is None
+    assert token.get_position() == (1, 4)
+
+    token = lexer.try_to_build_next_token()
+    assert token.get_type() == TokenType.INT
+    assert token.get_value() == 4
+    assert token.get_position() == (1, 6)
 
 
 def test_lexer_with_multiple_tokens_of_different_type_with_spaces():

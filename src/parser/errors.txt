@@ -9,9 +9,9 @@ _must_be_in_set_and_consume()
 unexpected_token_type(expected_types, received_type)
 
 parse_program()
-FunctionRedefinitionError(function_name)
-StatementRedefinitionError(statement_name)
-AspectRedefinitionError(aspect_name)
+FunctionRedefinitionError(position, function_name)
+StatementRedefinitionError(position, statement_name)
+AspectRedefinitionError(position, aspect_name)
 
 _must_be_and_consume(TokenType.OPENING_BRACKET)
 MissingOpeningParenthesisError(position, function_name, token)
@@ -23,7 +23,7 @@ if not return_type:
     raise NoReturnTypeError(position, function_name)
 
 if not block:
-    raise NoCodeBlockError(position, function name) 
+    raise NoCodeBlockError(position, statement_name) 
 
 _must_be_and_consume(TokenType.ON, SyntaxError)
 _must_be_and_consume(TokenType.LIKE, SyntaxError)
@@ -45,4 +45,10 @@ MissingIfStatement(position, received_token)
 
 if not else_block:
 MissingElseStatement(position, received_token)
+
+UncompleteOrExpression()
+UncompleteAndExpression()
+UncompleteUnaryTermError()
+UncompleteCastedTermError()
+UncompleteMultiplicativeError()
 

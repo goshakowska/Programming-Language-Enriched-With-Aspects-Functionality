@@ -1,5 +1,5 @@
 from visitor import Visitor
-from ast.ast_type import AstType
+from ast_tree.ast_type import AstType
 
 
 class AndExpression:
@@ -10,7 +10,7 @@ class AndExpression:
         self.type = AstType.AND
 
     def __repr__(self):
-        return f"AndExpression({self.left}, {self.right})"
+        return f"AndExpression({self.position}, {self.left}, {self.right})"
 
     def accept(self, visitor: Visitor):
         return visitor.visit_and_expression(self)

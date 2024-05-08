@@ -144,6 +144,7 @@ class Lexer:
     def build_one_char_token(self):
 
         if character_type := self.one_char_symbols.get(self._character):
+            self._next_char()
             return Token(character_type, line=self._token_line,
                          column=self._token_column)
         return None
@@ -214,9 +215,11 @@ class Lexer:
                 self._next_char()
             number_buffer = "".join(number_buffer)
             if is_float:
+                number_buffer = float(number_buffer)
                 return Token(TokenType.FLOAT, value=number_buffer,
                              line=self._token_line, column=self._token_column)
             else:
+                number_buffer = int(number_buffer)
                 return Token(TokenType.INT, value=number_buffer,
                              line=self._token_line, column=self._token_column)
 
