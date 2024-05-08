@@ -1,4 +1,5 @@
 from src.visitor.visitor import Visitor
+from src.visitor.checker_visitor import CheckerVisitor
 from src.ast_tree.ast_type import AstType
 
 
@@ -24,3 +25,6 @@ class Program:
 
     def accept(self, visitor: Visitor):
         return visitor.visit_program(self)
+
+    def accept_checker(self, checker: CheckerVisitor):
+        return checker.visit_program(self)

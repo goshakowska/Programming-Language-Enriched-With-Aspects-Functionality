@@ -65,6 +65,7 @@ from src.parser.parser_errors import NoIndexExpressionError
 from src.parser.parser_errors import NoIteratorError
 from src.parser.parser_errors import NoIterableError
 from src.parser.parser_errors import InvalidExpressionError
+from src.parser.parser_errors import InvalidAspectPatternError
 
 RELATION_OPERATORS = {TokenType.LESS_THAN_OPERATOR: LessThanExpression,
                       TokenType.GREATER_THAN_OPERATOR: GreaterThanExpression,
@@ -170,7 +171,7 @@ class Parser:
                     ) \
                 or self._parse_aspect_declaration(
                 lambda aspect_to_add: aspects.append(aspect_to_add)
-                if aspect_to_add.names not in aspect_names
+                if aspect_to_add.name not in aspect_names
                 else raise_(AspectRedefinitionError(
                     self.current_token.get_position(),
                     aspect_to_add.name))
@@ -215,28 +216,28 @@ class Parser:
         self.consume_token()
         token = self._must_be_and_consume(TokenType.IDENTIFIER,
                                           UnexpectedTokenTypeError
-                                          (self.current_token.get_position,
+                                          (self.current_token.get_position(),
                                            TokenType.IDENTIFIER,
                                            self.current_token.get_type()))
         name = token.get_value()
         self._must_be_and_consume(TokenType.OPENING_BRACKET,
                                   MissingOpeningParenthesisError
-                                  (self.current_token.get_position, name))
+                                  (self.current_token.get_position(), name))
         params = self._parse_parameters()
         self._must_be_and_consume(TokenType.CLOSING_BRACKET,
                                   MissingClosingParenthesisError
-                                  (self.current_token.get_position, name))
+                                  (self.current_token.get_position(), name))
         self._must_be_and_consume(TokenType.COLON,
                                   UnexpectedTokenTypeError
-                                  (self.current_token.get_position,
+                                  (self.current_token.get_position(),
                                    TokenType.COLON,
                                    self.current_token.get_type()))
         return_type = self._parse_return_type()
         if not return_type:
-            raise NoReturnTypeError(self.current_token.get_position, name)
+            raise NoReturnTypeError(self.current_token.get_position(), name)
         block = self._parse_block()
         if not block:
-            raise NoExecutionBlockError(self.current_token.get_position, name)
+            raise NoExecutionBlockError(self.current_token.get_position(), name)
         function_handler(
             FunctionDefinition(position, name, params, block, return_type))
         return True
@@ -250,19 +251,19 @@ class Parser:
         self.consume_token()
         token = self._must_be_and_consume(TokenType.IDENTIFIER,
                                           UnexpectedTokenTypeError
-                                          (self.current_token.get_position,
+                                          (self.current_token.get_position(),
                                            TokenType.IDENTIFIER,
                                            self.current_token.get_type()))
         name = token.get_value()
         self._must_be_and_consume(TokenType.COLON,
                                   UnexpectedTokenTypeError
-                                  (self.current_token.get_position,
+                                  (self.current_token.get_position(),
                                    TokenType.COLON,
                                    self.current_token.get_type()))
         target, event, regular_expression = self._parse_aspect_trigger(name)
         block = self._parse_block()
         if not block:
-            raise NoExecutionBlockError(self.current_token.get_position, name)
+            raise NoExecutionBlockError(self.current_token.get_position(), name)
         aspect_handler(
             AspectDefinition(position, name, target, event, regular_expression, block)
             )
@@ -282,19 +283,24 @@ class Parser:
                 aspect_name,
                 ASPECT_TARGETS.keys()  # czy dobrze?
                 )
+        target = ASPECT_TARGETS.get(target)
         if (event := self._parse_aspect_event()) is None:
             raise InvalidAspectEventError(
                 self.current_token.get_position(),
                 aspect_name,
                 ASPECT_EVENTS.keys()
                 )
+        event = ASPECT_EVENTS.get(event)
         self._must_be_and_consume(TokenType.LIKE,
                                   InvalidAspectDefinitionSyntaxError(
                                       self.current_token.get_position(),
                                       aspect_name,
                                       TokenType.LIKE
                                   ))
-        regular_expression = self._parse_identifier()
+        if (regular_expression := self._parse_identifier()) is None:
+            raise InvalidAspectPatternError(
+                self.current_token.get_position(),
+                aspect_name)
         return target, event, regular_expression
 
     # aspect_target ::= "func";
@@ -330,7 +336,7 @@ class Parser:
         token_type = VARIABLE_TYPES.get(token.get_type())
         token = self._must_be_and_consume(TokenType.IDENTIFIER,
                                           UnexpectedTokenTypeError
-                                          (self.current_token.get_position,
+                                          (self.current_token.get_position(),
                                            TokenType.IDENTIFIER,
                                            self.current_token.get_type()))
         name = token.get_value()
@@ -347,7 +353,7 @@ class Parser:
     def _parse_identifier(self):
         token = self._must_be_and_consume(TokenType.IDENTIFIER,
                                           UnexpectedTokenTypeError
-                                          (self.current_token.get_position,
+                                          (self.current_token.get_position(),
                                            TokenType.IDENTIFIER,
                                            self.current_token.get_type()))
         return Identifier(token.get_position(), token.get_value())
@@ -472,7 +478,7 @@ class Parser:
             parameter = self._parse_declaration()
             if not parameter:
                 raise InvalidParameterError(
-                    self.current_token.get_position,
+                    self.current_token.get_position(),
                     parameters[-1].get_name()
                     )
             parameters.append(parameter)
@@ -485,7 +491,7 @@ class Parser:
                 return None
             else:
                 raise UnexpectedTokenTypeError(
-                    self.current_token.get_position,
+                    self.current_token.get_position(),
                     VARIABLE_TYPES.keys(),
                     self.current_token.get_type()
                     )
@@ -538,7 +544,7 @@ class Parser:
             raise NoConditionBlockError(
                 position,
                 "'if'"
-            ) #
+            )  #
         self._must_be_and_consume(TokenType.CLOSING_BRACKET,
                                   UnexpectedTokenTypeError(
                                       self.current_token.get_position(),

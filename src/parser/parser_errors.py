@@ -167,6 +167,15 @@ class InvalidAspectEventError(Exception):
         return f"ERR! [{self.position}]: Aspect {self.aspect_name} has event not in expected aspect events {self.expected_aspect_events}."
 
 
+class InvalidAspectPatternError(Exception):
+    def __init__(self, position, aspect_name) -> None:
+        self.position = position
+        self.aspect_name = aspect_name
+
+    def __str__(self):
+        return f"ERR! [{self.position}]: Aspect {self.aspect_name} has invalid regular expression pattern."
+
+
 # TODO: refactor
 class UncompleteOrExpressionError(Exception):
     def __init__(self, position, left_term) -> None:
