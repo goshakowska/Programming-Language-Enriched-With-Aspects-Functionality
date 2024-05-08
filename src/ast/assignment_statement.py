@@ -1,18 +1,21 @@
 from visitor import Visitor
+from ast_type import AstType
 
 
 class AssignmentStatement:
-    def __init__(self, position, declaration, expression) -> None:
+    def __init__(self, position, expression, object_access) -> None:
         self.position = position
-        self.declaration = declaration
+        self.object_access = object_access
         self.expression = expression
+        self.type = AstType.ASSIGNMENT_STATEMENT
 
     def __repr__(self):
-        return f"AssignmentStatement({self.declaration}, {self.expression})"
+        return f"AssignmentStatement({self.position}, {self.object_access},\
+              {self.expression})"
 
     def __eq__(self, other):
         return (isinstance(other, AssignmentStatement) and
-                other.declaration == self.declaration and
+                other.object_access == self.object_access and
                 other.expression == self.expression)
 
     def accept(self, visitor: Visitor):

@@ -1,4 +1,5 @@
 from visitor import Visitor
+from ast_type import AstType
 
 
 class WhileStatement:
@@ -6,12 +7,11 @@ class WhileStatement:
         self.position = position
         self.condition = condition
         self.execution_block = execution_block
+        self.type = AstType.WHILE_STATEMENT
 
     def __repr__(self):
-        return f"WhileStatement({self.condition}, {self.execution_block})"
-
-    def __eq__(self, other):
-        pass
+        return f"WhileStatement({self.position}, {self.condition},\
+              {self.execution_block})"
 
     def accept(self, visitor: Visitor):
         return visitor.visit_while_statement(self)

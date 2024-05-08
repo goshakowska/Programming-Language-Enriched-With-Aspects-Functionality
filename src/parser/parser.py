@@ -1,7 +1,7 @@
 from lexer.lexer import Lexer
 from token.token_type import TokenType
 from token.token import Token
-from invalid_syntax_error import InvalidSyntaxError
+# from invalid_syntax_error import InvalidSyntaxError
 from ast.function_definiton import FunctionDefinition
 from ast.aspect_definition import AspectDefinition
 from ast.identifier import Identifier
@@ -11,6 +11,11 @@ from ast.variable_declaration import VariableDeclaration
 from ast.for_statement import ForStatement
 from ast.while_statement import WhileStatement
 from ast.return_statement import ReturnStatement
+from ast.assignment_statement import AssignmentStatement
+from ast.object_access import ObjectAccess
+from ast.indexed_item import IndexedItem
+from ast.unary_term import UnaryTerm
+from ast.casted_term import CastedTerm
 
 from ast.less_than_expression import LessThanExpression
 from ast.greater_than_expression import GreaterThanExpression
@@ -28,9 +33,13 @@ from ast.division_expression import DivisionExpression
 from ast.or_expression import OrExpression
 from ast.and_expression import AndExpression
 
-from ast.assignment_statement import AssignmentStatement
 from ast.ast_type import AstType
 from ast.program import Program
+
+from ast.bool_literal import BoolLiteral
+from ast.str_literal import StrLiteral
+from ast.int_literal import IntLiteral
+from ast.float_literal import FloatLiteral
 
 from parser_errors import UnexpectedTokenTypeError
 from parser_errors import FunctionRedefinitionError
@@ -59,34 +68,38 @@ RELATION_OPERATORS = {TokenType.LESS_THAN_OPERATOR: LessThanExpression,
                       TokenType.GREATER_THAN_OPERATOR: GreaterThanExpression,
                       TokenType.EQUAL: EqualExpression,
                       TokenType.NOT_EQUAL: NotEqualExpression,
-                      TokenType.LESS_THAN_OR_EQUAL_OPERATOR: LessThanOrEqualExpression,
-                      TokenType.GREATER_THAN_OR_EQUAL_OPERATOR: GreaterThanOrEqualExpression}  # TODO: DONE!
+                      TokenType.LESS_THAN_OR_EQUAL_OPERATOR:
+                      LessThanOrEqualExpression,
+                      TokenType.GREATER_THAN_OR_EQUAL_OPERATOR:
+                      GreaterThanOrEqualExpression}
 
 ADDITIVE_OPERATORS = {TokenType.PLUS: PlusExpression,
-                      TokenType.MINUS: MinusExpression}  # TODO: DONE!
+                      TokenType.MINUS: MinusExpression}
 
 MULTIPLICATIVE_OPERATORS = {TokenType.MULTIPLICATION: MultiplicationExpression,
-                            TokenType.DIVISION: DivisionExpression}  # TODO: DONE!
+                            TokenType.DIVISION: DivisionExpression}
 
 VARIABLE_TYPES = {TokenType.BOOL_TYPE: AstType.BOOL_TYPE,
                   TokenType.FLOAT_TYPE: AstType.FLOAT_TYPE,
                   TokenType.INT_TYPE: AstType.INT_TYPE,
-                  TokenType.STR_TYPE: AstType.STR_TYPE}  # TODO: DONE!
+                  TokenType.STR_TYPE: AstType.STR_TYPE}
 
 ASPECT_TARGETS = {TokenType.FUNCTION_TYPE: AstType.FUNCTION}  # rozszerzalne?
 
 ASPECT_EVENTS = {TokenType.ASPECT_ON_START: AstType.ASPECT_ON_START,
                  TokenType.ASPECT_ON_END: AstType.ASPECT_ON_END,
-                 TokenType.ASPECT_ON_CALL: AstType.ASPECT_ON_CALL}  # TODO: DONE!
+                 TokenType.ASPECT_ON_CALL: AstType.ASPECT_ON_CALL}
 
-LITERALS = {TokenType.BOOL: AstType.BOOL,
-            TokenType.FLOAT: AstType.FLOAT,
-            TokenType.INT: AstType.INT,
-            TokenType.STR: AstType.STR}
+# LITERALS = {TokenType.BOOL: AstType.BOOL,
+#             TokenType.FLOAT: AstType.FLOAT,
+#             TokenType.INT: AstType.INT,
+#             TokenType.STR: AstType.STR}
 
+LITERALS = {TokenType.BOOL: BoolLiteral,
+            TokenType.FLOAT: FloatLiteral,
+            TokenType.INT: IntLiteral,
+            TokenType.STR: StrLiteral}
 
-
-# w error handlerze będą odkładane informacje o błędach - podobnie, jak mam to zrobić z lekserem, czyli np. jak błąd jest nieterminalny - wrzucam go do error handlera i potem on tę linijkę z błędem wypluwa. nie trzeba tego robić - można po prostu przekazać błąd do głównej pętli i zatrzymać program
 
 class Parser:
     def __init__(self, lexer: Lexer, token: Token, error_handler) -> None:
@@ -102,21 +115,18 @@ class Parser:
 
     def _must_be_and_consume(self, token_type: TokenType, exception) -> Token:
         if self.current_token.get_type() != token_type:
-            raise exception  # TODO: zamiast error handlera throw Error i tyle
-        # value = self.current_token.value  # zmieniam z oryginalnej implementacji na tę z całym tokenem
+            raise exception
         token = self.current_token
         self.consume_token()
         return token
 
-    def _must_be_in_set_and_consume(self, token_types: list[TokenType], exception) -> Token:
+    def _must_be_in_set_and_consume(self, token_types: list[TokenType],
+                                    exception) -> Token:
         if self.current_token.get_type() not in token_types:
             raise exception
         token = self.current_token
         self.consume_token()
         return token
-        # self._must_be(token_type)
-        # return self.consume_token()  # czy tu return czy po prostu self.consume_token()
-        # pass
 
     def _should_be_in_set_and_consume(self, token_types: list[TokenType]):
         if self.current_token.get_type() not in token_types:
@@ -134,49 +144,52 @@ class Parser:
 
     # jedyna publiczna metoda takiego parsera
 
-    # program::= { declaration_statement | function_declaration | aspect_declaration}
+    # program::= { declaration_statement |
+    #              function_declaration  |
+    #              aspect_declaration}
     # {} ebnfa odpowiada pętla while
-    def parse_program(self):  # TODO: utworzyć klasę program
+    def parse_program(self, name):  # TODO: utworzyć klasę program
         functions = set()
         aspects = set()
         statements = []
         # functions = {
-        #     "declaration_statement": self._parse_declaration_statement(),  # todo
+        #     "declaration_statement": self._parse_declaration_statement(),
         #     "function_declaration": self._parse_function_declaration(),
         #     "aspect_declaration": self._parse_aspect_declaration(),
         # }
 
         def raise_(provided_error):
             raise provided_error
-        
+
         while \
                 self._parse_declaration_statement(
                 lambda statement_to_add: statements.append(statement_to_add)
                 if statement_to_add not in statements
                 else raise_(StatementRedefinitionError(
-                    self.current_token.get_position(), statement_to_add.name()))
+                    self.current_token.get_position(),
+                    statement_to_add.name()))
                     ) \
                 or self._parse_function_declaration(
                 lambda function_to_add: functions.append(function_to_add)
                 if function_to_add.name() not in functions
                 else raise_(FunctionRedefinitionError(
-                    self.current_token.get_position(), function_to_add.name()))
+                    self.current_token.get_position(),
+                    function_to_add.name()))
                     ) \
                 or self._parse_aspect_declaration(
                 lambda aspect_to_add: aspects.add(aspect_to_add)
                 if aspect_to_add.name() not in aspects
                 else raise_(AspectRedefinitionError(
-                    self.current_token.get_position(), aspect_to_add.name()))
+                    self.current_token.get_position(),
+                    aspect_to_add.name()))
                     ):  # to current_token.get_position() trochę mało pewne
             continue
         if self.current_token.get_type() != TokenType.ETX:
             raise SyntaxError
         else:
-            return Program(functions, aspects, statements)
+            return Program(name, functions, aspects, statements)
         # dopóki definicja funkcji
         # while
-
-    # definicje funkcji muszą być unikalne - unikalność na poziomie nazwy - nie chcemy mieć redefiniowanych funkcji
 
     # declaration_statement ::= declaration, [ "=", expression ]
     def _parse_declaration_statement(self):
@@ -189,11 +202,12 @@ class Parser:
             return declaration
         return None
 
-    # function_declaration ::= "func", identifier, "(", [ parameters ], ")", ":", return_type, block; 
-    def _parse_function_declaration(self, function_handler) -> FunctionDefinition:
+    # function_declaration ::= "func", identifier, "(", [ parameters ], ")",
+    # ":", return_type, block;
+    def _parse_function_declaration(self, function_handler):
         if self.current_token.type != TokenType.FUNCTION_TYPE:
-            return None  # to nie jest jeszcze błąd - po prostu nie widzę tu jeszcze funkcji
-        position = self.current_token.get_position()  # jeżeli chcemy, aby pozycja definicji funkcji była zgodna z pozycją pierwszego tokenu
+            return None
+        position = self.current_token.get_position()
         self.consume_token()
         token = self._must_be_and_consume(TokenType.IDENTIFIER,
                                           UnexpectedTokenTypeError
@@ -247,9 +261,10 @@ class Parser:
         aspect_handler(
             AspectDefinition(position, name, target, event, regular_expression)
             )
-        return True  # TODO: DONE!
+        return True
 
-    # aspect_trigger ::= "on", aspect_target, aspect_event, "like", regular_expression;
+    # aspect_trigger ::= "on", aspect_target, aspect_event, "like",
+    # regular_expression;
     def _parse_aspect_trigger(self, aspect_name):
         self._must_be_and_consume(TokenType.ON,
                                   InvalidAspectDefinitionSyntaxError
@@ -294,7 +309,7 @@ class Parser:
 
     # declaration ::= type, identifier;
     def _parse_declaration(self):
-        if self.current_token.get_type() not in VARIABLE_TYPES.keys():  # TODO: Typ w AST!
+        if self.current_token.get_type() not in VARIABLE_TYPES.keys():
             return None
         position = self.current_token.get_position()
         token = self._must_be_in_set_and_consume
@@ -309,13 +324,13 @@ class Parser:
                                            TokenType.IDENTIFIER,
                                            self.current_token.get_type()))
         name = token.get_value()
-        return VariableDeclaration(position, token_type, name)
+        return VariableDeclaration(position, name, token_type)
 
     # type ::= "int" | "float" | "string" | "bool";
     def _parse_type(self):
         if token := \
          self._should_be_in_set_and_consume(VARIABLE_TYPES.keys()) is None:
-            return None  # TODO:can_be_in_set_and_consume(VARIABLE_TYPES, None) DONE!
+            return None
         token_type = token.get_type()
         return token_type
 
@@ -397,14 +412,14 @@ class Parser:
 
     # relation_operator ::= ">=" | ">" | "<=" | "<" | "==" | "!=";
 
-    # additive_term ::= multiplicative_term, { ("+" | "-"), multiplicative_term};
+    # additive_term ::= multiplicative_term, { ("+" | "-"),
+    # multiplicative_term};
     def _parse_additive_term(self):
         left_multiplicative_factor = self._parse_multiplicative_term()
         if left_multiplicative_factor is None:
             return None
         while additive_constructor := ADDITIVE_OPERATORS.get(
              self.current_token.get_type()):
-        # while self.current_token.get_type() in (TokenType.PLUS, TokenType.MINUS):
             position = self.current_token.get_position()
             self.consume_token()
             right_multiplicative_factor = self._parse_multiplicative_term()
@@ -421,13 +436,12 @@ class Parser:
         return left_multiplicative_factor
 
     # multiplicative_term ::= unary_term, { ("*" | "/" ), unary_term};
-    def _parse_multiplicative_term(self):  # TODO: DONE!
+    def _parse_multiplicative_term(self):
         left_unary_term = self._parse_unary_term()
         if left_unary_term is None:
             return None
         while multiplicative_constructor := MULTIPLICATIVE_OPERATORS.get(
              self.current_token.get_type()):
-        # while self.current_token.get_type() in (TokenType.MULTIPLICATION, TokenType.DIVISION):
             position = self.current_token.get_position()
             self.consume_token()
             right_unary_term = self._parse_unary_term()
@@ -456,7 +470,7 @@ class Parser:
                 raise InvalidParameterError(
                     self.current_token.get_position,
                     parameters[-1].get_name()
-                    )  # TODO: DONE!
+                    )
             parameters.append(parameter)
         return parameters
 
@@ -489,7 +503,8 @@ class Parser:
                                   ))
         return statements
 
-    # statement ::= selection_statement | declaration_statement | assignment_or_call_statement | iteration_statement | return_statement;
+    # statement ::= selection_statement | declaration_statement
+    # | assignment_or_call_statement | iteration_statement | return_statement;
     def _parse_statement(self):
         if statement := self._parse_selection_statement()\
               is None:
@@ -504,7 +519,8 @@ class Parser:
                             return None
         return statement
 
-    # selection_statement ::= "if", "(", condition, ")", block, ["else", block];
+    # selection_statement ::= "if", "(", condition, ")", block,
+    # ["else", block];
     # condition ::= expression;
     def _parse_selection_statement(self):
         if self.current_token.get_type() != TokenType.IF:
@@ -556,7 +572,7 @@ class Parser:
                                       MissingSemicolonError(
                                           self.current_token.get_position(),
                                           expression.name()))
-            return AssignmentStatement(position, object_access, expression)
+            return AssignmentStatement(position, expression, object_access)
         self._must_be_and_consume(TokenType.SEMICOLON,
                                   MissingSemicolonError(
                                           self.current_token.get_position(),
@@ -602,11 +618,11 @@ class Parser:
         name = self.current_token.get_value()
         position = self.current_token.get_position()
         self.consume_token()
-        if result := self._parse_function_call(name):
+        if result := self._parse_function_call(position, name):
             return result
         return Identifier(position, name)
 
-    def _parse_function_call(self, name: str):
+    def _parse_function_call(self, position, name):
         if self.current_token.get_type() != TokenType.OPENING_BRACKET:
             return None
         self.consume_token()
@@ -616,7 +632,7 @@ class Parser:
                                       self.current_token.get_position(),
                                       TokenType.CLOSING_BRACKET,
                                       self.current_token.get_type()))
-        return FunctionCall(name, arguments)
+        return FunctionCall(position, name, arguments)
 
     # arguments ::= expression, {",", expression};
     def _parse_arguments(self):
@@ -634,9 +650,9 @@ class Parser:
                     arguments[-1].name)
             arguments.append(argument)
         return arguments
-    # TODO: DONE! [ "(", parameters, ")" ] funkcja function_call, na start name 
 
-    # iteration_statement ::= "for", identifier, "in", expression, block | "while", "(", condition, ")", block;
+    # iteration_statement ::= "for", identifier, "in", expression, block |
+    # "while", "(", condition, ")", block;
     # condition ::= expression;
 
     def _parse_iteration_statement(self):
@@ -698,25 +714,30 @@ class Parser:
     def _parse_unary_term(self):
         negated = False
         if self.current_token.get_type() == TokenType.MINUS:
+            position = self.current_token.get_position()
             self.consume_token()
             negated = True
         casted_term = self._parse_casted_term()
         if negated and casted_term:
-            return UnaryTerm(casted_term)
+            return UnaryTerm(position, casted_term)
         if negated and not casted_term:
-            raise UncompleteUnaryExpressionError(self.current_token.get_position())  # TODO
+            raise UncompleteUnaryExpressionError(
+                self.current_token.get_position())
         return casted_term
 
     # casted_term ::= term, ["as", type];
     def _parse_casted_term(self):
         term = self._parse_term()
+        position = term.position  # czy to dobrze?
         if not term:
             return None
         if self.current_token.get_type() == TokenType.AS:
             self.consume_token()
-            if type := self._parse_type() is None:
-                raise UncompleteCastedExpressionError(self.current_token.get_position(), term)  # TODO
-            return CastedTerm(term, type)
+            if casted_type := self._parse_type() is None:
+                raise UncompleteCastedExpressionError(
+                    self.current_token.get_position(),
+                    term)
+            return CastedTerm(position, term, casted_type)
         return term
 
     # term ::= literal | object_access | "(", expression, ")";
@@ -733,12 +754,20 @@ class Parser:
                                           self.current_token.get_position(),
                                           TokenType.CLOSING_BRACKET,
                                           self.current_token.get_type()))
-            return term  # co tutaj zwracać? literal ma inną konstrukcję niż expression(?)
+            return term
 
     # literal ::= int | float | bool | string;
+    # def _parse_literal(self):
+    #     token = self._should_be_in_set_and_consume(LITERALS.keys())
+    #     if token:
+    #         literal = token.get_value()
+    #         return literal
+    #     return None
+
     def _parse_literal(self):
-        token = self._must_be_in_set_and_consume(LITERALS.keys(), None)  # tutaj nie wyrzuca błędu
-        if token:
-            literal = token.get_value()
-            return literal
+        if literal_constructor := LITERALS.get(self.current_token.get_type()):
+            position = self.current_token.get_position()
+            value = self.current_token.get_value()
+            self.consume_token()
+            return literal_constructor(position, value)
         return None

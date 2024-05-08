@@ -1,4 +1,5 @@
 from visitor import Visitor
+from ast_type import AstType
 
 
 class NotEqualExpression:
@@ -6,6 +7,7 @@ class NotEqualExpression:
         self.position = position
         self.left_term = left_term
         self.right_term = right_term
+        self.type = AstType.NOT_EQUAL
 
     def __repr__(self):
         return f"NotEqualExpression({self.left_term}, {self.right_term})"

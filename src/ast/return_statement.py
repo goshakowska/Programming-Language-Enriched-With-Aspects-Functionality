@@ -1,4 +1,15 @@
+from visitor import Visitor
+from ast_type import AstType
+
+
 class ReturnStatement:
-    def __init__(self, position, expressions):
+    def __init__(self, position, expression):
         self.position = position
-        self.expressions = expressions
+        self.expression = expression
+        self.type = AstType.RETURN_STATEMENT
+
+    def __repr__(self):
+        return f"ReturnStatement({self.position}, {self.expression})"
+
+    def accept(self, visitor: Visitor):
+        return visitor.visit_return_statement(self)

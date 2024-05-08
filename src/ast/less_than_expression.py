@@ -1,4 +1,5 @@
 from visitor import Visitor
+from ast_type import AstType
 
 
 class LessThanExpression:
@@ -6,6 +7,7 @@ class LessThanExpression:
         self.position = position
         self.left_term = left_term
         self.right_term = right_term
+        self.type = AstType.LESS_THAN
 
     def __repr__(self):
         return f"LessThanExpression({self.left_term}, {self.right_term})"

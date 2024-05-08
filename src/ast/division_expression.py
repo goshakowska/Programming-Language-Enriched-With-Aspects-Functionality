@@ -1,4 +1,5 @@
 from visitor import Visitor
+from ast_type import AstType
 
 
 class DivisionExpression:
@@ -6,6 +7,7 @@ class DivisionExpression:
         self.position = position
         self.left_term = left_term
         self.right_term = right_term
+        self.type = AstType.DIVISION
 
     def __repr__(self):
         return f"DivisionExpression({self.left_term}, {self.right_term})"

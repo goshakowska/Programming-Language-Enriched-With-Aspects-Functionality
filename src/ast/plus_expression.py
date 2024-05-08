@@ -1,4 +1,5 @@
 from visitor import Visitor
+from ast_type import AstType
 
 
 class PlusExpression:
@@ -6,6 +7,7 @@ class PlusExpression:
         self.position = position
         self.left_term = left_term
         self.right_term = right_term
+        self.type = AstType.PLUS
 
     def __repr__(self):
         return f"PlusExpression({self.left_term}, {self.right_term})"

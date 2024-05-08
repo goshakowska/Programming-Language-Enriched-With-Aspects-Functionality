@@ -12,6 +12,10 @@ class AspectDefinition:
     def __repr__(self):
         return f"AspectDefinition({self.name}, {self.target}, {self.event}, {self.regular_expression})"
 
+    def __eq__(self, other):
+        return (isinstance(other, AspectDefinition) and
+                other.name == self.name)
+
     def accept(self, visitor: Visitor):
         return visitor.visit_aspect_definition(self)
 

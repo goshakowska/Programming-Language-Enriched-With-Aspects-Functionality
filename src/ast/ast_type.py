@@ -23,7 +23,7 @@ class AstType(Enum):
     FLOAT_TYPE = auto()
     INT_TYPE = auto()
     STR_TYPE = auto()
-    
+
     BOOL = auto()
     FLOAT = auto()
     INT = auto()
@@ -36,4 +36,13 @@ class AstType(Enum):
     ASPECT_ON_END = auto()  # end
     ASPECT_ON_CALL = auto()  # call
 
-# TODO!
+    CONDITIONAL_STATEMENT = auto()
+    ASSIGNMENT_STATEMENT = auto()
+    OBJECT_ACCESS = auto()
+    INDEXED_ITEM = auto()
+    FUNCTION_CALL = auto()
+    FOR_STATEMENT = auto()
+    WHILE_STATEMENT = auto()
+    RETURN_STATEMENT = auto()
+    UNARY_TERM = auto()
+    CASTED_TERM = auto()

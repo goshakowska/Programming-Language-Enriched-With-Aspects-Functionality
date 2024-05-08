@@ -1,4 +1,5 @@
 from visitor import Visitor
+from ast_type import AstType
 
 
 class EqualExpression:
@@ -6,6 +7,7 @@ class EqualExpression:
         self.position = position
         self.left_term = left_term
         self.right_term = right_term
+        self.type = AstType.EQUAL
 
     def __repr__(self):
         return f"EqualExpression({self.left_term}, {self.right_term})"
