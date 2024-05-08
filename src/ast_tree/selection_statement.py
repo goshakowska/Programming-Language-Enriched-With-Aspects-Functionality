@@ -15,5 +15,11 @@ class SelectionStatement:
             {self.position}, {self.expression}, {self.if_block},\
                   {self.else_block})"
 
+    def __eq__(self, other):
+        return (isinstance(other, SelectionStatement) and
+                other.expression == self.expression and
+                other.if_block == self.if_block and
+                other.else_block == self.else_block)
+
     def accept(self, visitor: Visitor):
         return visitor.visit_selection_statement(self)

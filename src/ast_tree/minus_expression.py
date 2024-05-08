@@ -13,5 +13,10 @@ class MinusExpression:
         return f"MinusExpression({self.position}, {self.left_term},\
               {self.right_term})"
 
+    def __eq__(self, other):
+        return (isinstance(other, MinusExpression) and
+                other.left_term == self.left_term and
+                other.right_term == self.right_term)
+
     def accept(self, visitor: Visitor):
         return visitor.visit_minus_expression(self)

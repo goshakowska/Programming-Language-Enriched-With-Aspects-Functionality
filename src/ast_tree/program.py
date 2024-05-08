@@ -3,7 +3,7 @@ from src.ast_tree.ast_type import AstType
 
 
 class Program:
-    def __init__(self, name: str, functions: set, aspects: set,
+    def __init__(self, name: str, functions: list, aspects: list,
                  statements: list) -> None:
         self.name = name
         self.functions = functions
@@ -14,6 +14,13 @@ class Program:
     def __repr__(self):
         return f"Program({self.name}, {self.functions}, {self.aspects},\
               {self.statements})"
+
+    def __eq__(self, other):
+        return (isinstance(other, Program) and
+                other.name == self.name and
+                other.functions == self.functions and
+                other.aspects == self.aspects and
+                other.statements == self.statements)
 
     def accept(self, visitor: Visitor):
         return visitor.visit_program(self)

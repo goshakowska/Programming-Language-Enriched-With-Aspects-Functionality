@@ -17,7 +17,10 @@ class FunctionDefinition:
 
     def __eq__(self, other):
         return (isinstance(other, FunctionDefinition) and
-                other.name == self.name)
+                other.name == self.name and
+                other.params == self.params and
+                other.return_type == self.return_type and
+                other.block == self.block)
 
     def accept(self, visitor: Visitor):
         return visitor.visit_function_definition(self)

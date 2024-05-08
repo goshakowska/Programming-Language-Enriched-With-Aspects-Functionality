@@ -13,5 +13,10 @@ class LessThanOrEqualExpression:
         return f"LessThanOrEqualExpression(\
             {self.position}, {self.left_term}, {self.right_term})"
 
+    def __eq__(self, other):
+        return (isinstance(other, LessThanOrEqualExpression) and
+                other.left_term == self.left_term and
+                other.right_term == self.right_term)
+
     def accept(self, visitor: Visitor):
         return visitor.visit_less_than_or_equal_expression(self)

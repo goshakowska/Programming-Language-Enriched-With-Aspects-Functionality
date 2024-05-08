@@ -3,7 +3,8 @@ from src.ast_tree.ast_type import AstType
 
 
 class AspectDefinition:
-    def __init__(self, position, name, target, event, regular_expression, block):
+    def __init__(self, position, name, target, event, regular_expression,
+                 block):
         self.position = position
         self.name = name
         self.target = target

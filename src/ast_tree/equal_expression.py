@@ -13,5 +13,10 @@ class EqualExpression:
         return f"EqualExpression({self.position}, {self.left_term},\
               {self.right_term})"
 
+    def __eq__(self, other):
+        return (isinstance(other, EqualExpression) and
+                other.left_term == self.left_term and
+                other.right_term == self.right_term)
+
     def accept(self, visitor: Visitor):
         return visitor.visit_equal_expression(self)

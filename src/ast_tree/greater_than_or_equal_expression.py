@@ -13,5 +13,10 @@ class GreaterThanOrEqualExpression:
         return f"GreaterThanOrEqualExpression(\
             {self.position}, {self.left_term}, {self.right_term})"
 
+    def __eq__(self, other):
+        return (isinstance(other, GreaterThanOrEqualExpression) and
+                other.left_term == self.left_term and
+                other.right_term == self.right_term)
+
     def accept(self, visitor: Visitor):
         return visitor.visit_greater_than_or_equal_expression(self)

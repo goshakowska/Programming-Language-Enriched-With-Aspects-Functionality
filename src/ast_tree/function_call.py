@@ -12,5 +12,9 @@ class FunctionCall:
     def __repr__(self):
         return f"FunctionCall({self.position}, {self.name}, {self.arguments})"
 
+    def __eq__(self, other):
+        return (isinstance(other, FunctionCall) and
+                other.name == self.name, other.arguments == self.arguments)  #
+
     def accept(self, visitor: Visitor):
         return visitor.visit_function_call(self)

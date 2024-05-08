@@ -13,5 +13,10 @@ class PlusExpression:
         return f"PlusExpression({self.position}, {self.left_term},\
               {self.right_term})"
 
+    def __eq__(self, other):
+        return (isinstance(other, PlusExpression) and
+                other.left_term == self.left_term and
+                other.right_term == self.right_term)
+
     def accept(self, visitor: Visitor):
         return visitor.visit_plus_expression(self)

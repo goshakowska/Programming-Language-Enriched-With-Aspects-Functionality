@@ -12,5 +12,10 @@ class OrExpression:
     def __repr__(self):
         return f"OrExpression({self.left}, {self.right})"
 
+    def __eq__(self, other):
+        return (isinstance(other, OrExpression) and
+                other.left == self.left and
+                other.right == self.right)
+
     def accept(self, visitor: Visitor):
         return visitor.visit_or_expression(self)

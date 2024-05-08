@@ -12,5 +12,10 @@ class ObjectAccess:
     def __repr__(self):
         return f"ObjectAccess({self.position}, {self.item}, {self.dot_item})"
 
+    def __eq__(self, other):
+        return (isinstance(other, ObjectAccess) and
+                other.item == self.item and
+                other.dot_item == self.dot_item)
+
     def accept(self, visitor: Visitor):
         return visitor.visit_object_access(self)

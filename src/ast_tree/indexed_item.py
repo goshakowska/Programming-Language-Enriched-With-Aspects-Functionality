@@ -12,5 +12,10 @@ class IndexedItem:
     def __repr__(self):
         return f"IndexedItem({self.position}, {self.item}, {self.index})"
 
+    def __eq__(self, other):
+        return (isinstance(other, IndexedItem) and
+                other.item == self.item and
+                other.index == self.index)
+
     def accept(self, visitor: Visitor):
         return visitor.visit_indexed_item(self)

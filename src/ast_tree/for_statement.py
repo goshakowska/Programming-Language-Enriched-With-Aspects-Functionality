@@ -14,5 +14,11 @@ class ForStatement:
         return f"ForStatement({self.position}, {self.iterator},\
               {self.iterable}, {self.execution_block})"
 
+    def __eq__(self, other):
+        return (isinstance(other, ForStatement) and
+                other.iterator == self.iterator and
+                other.iterable == self.iterable and
+                other.execution_block == self.execution_block)
+
     def accept(self, visitor: Visitor):
         return visitor.visit_while_statement(self)

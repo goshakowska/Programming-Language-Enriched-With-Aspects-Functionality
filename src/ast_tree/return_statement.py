@@ -11,5 +11,9 @@ class ReturnStatement:
     def __repr__(self):
         return f"ReturnStatement({self.position}, {self.expression})"
 
+    def __eq__(self, other):
+        return (isinstance(other, ReturnStatement) and
+                other.expression == self.expression)
+
     def accept(self, visitor: Visitor):
         return visitor.visit_return_statement(self)

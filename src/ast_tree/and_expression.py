@@ -12,5 +12,10 @@ class AndExpression:
     def __repr__(self):
         return f"AndExpression({self.position}, {self.left}, {self.right})"
 
+    def __eq__(self, other):
+        return (isinstance(other, AndExpression) and
+                other.left == self.left and
+                other.right == self.right)
+
     def accept(self, visitor: Visitor):
         return visitor.visit_and_expression(self)

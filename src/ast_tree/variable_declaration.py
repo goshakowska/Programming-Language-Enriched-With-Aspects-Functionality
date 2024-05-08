@@ -13,7 +13,7 @@ class VariableDeclaration:  # position, ast_type, name
 
     def __eq__(self, other):
         return (isinstance(other, VariableDeclaration) and
-                other.name == self.name)
+                other.name == self.name and other.type == self.type)
 
     def accept(self, visitor: Visitor):
         return visitor.visit_variable_declaration(self)
