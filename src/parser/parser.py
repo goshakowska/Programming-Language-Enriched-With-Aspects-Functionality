@@ -281,7 +281,7 @@ class Parser:
             raise InvalidAspectTargetError(
                 self.current_token.get_position(),
                 aspect_name,
-                ASPECT_TARGETS.keys()  # czy dobrze?
+                ASPECT_TARGETS.keys()
                 )
         target = ASPECT_TARGETS.get(target)
         if (event := self._parse_aspect_event()) is None:
@@ -523,7 +523,7 @@ class Parser:
                self._parse_assignment_or_call_statement() or\
                self._parse_iteration_statement() or\
                self._parse_return_statement() or\
-               None  # TODO: Błąd przy parsowaniu statementów w funkcji
+               None
 
     # selection_statement ::= "if", "(", condition, ")", block,
     # ["else", block];
@@ -574,7 +574,7 @@ class Parser:
             if not expression:
                 raise NoAssignmentExpressionError(position)
             result = AssignmentStatement(position, expression, result)
-        self._must_be_and_consume(TokenType.SEMICOLON,  # w funkcji tutaj będzie return! wyrzuca błąd TODO!
+        self._must_be_and_consume(TokenType.SEMICOLON,
                                   MissingSemicolonError(
                                           self.current_token.get_position()))
         return result

@@ -39,7 +39,6 @@ class MissingOpeningParenthesisError(Exception):
     def __init__(self, position, statement_name) -> None:
         self.position = position
         self.statement_name = statement_name
-        # self.token = token
 
     def __str__(self):
         return f"ERR! [{self.position}]: Missing opening parenthesis in statement {self.statement}."
@@ -49,7 +48,6 @@ class MissingClosingParenthesisError(Exception):
     def __init__(self, position, statement_name) -> None:
         self.position = position
         self.statement_name = statement_name
-        # self.token = token
 
     def __str__(self):
         return f"ERR! [{self.position}]: Missing closing parenthesis in statement {self.statement} declaration."
@@ -58,7 +56,6 @@ class MissingClosingParenthesisError(Exception):
 class MissingSemicolonError(Exception):
     def __init__(self, position) -> None:
         self.position = position
-        # self.token = token
 
     def __str__(self):
         return f"ERR! [{self.position}]: Missing semicolon."
@@ -106,7 +103,7 @@ class NoIndexExpressionError(Exception):
 
     def __str__(self):
         return f"ERR! [{self.position}]: No index expression provided in indexed expression {self.name}."
-    
+
 
 class NoIteratorError(Exception):
     def __init__(self, position) -> None:
@@ -114,7 +111,7 @@ class NoIteratorError(Exception):
 
     def __str__(self):
         return f"ERR! [{self.position}]: No iterator provided in 'for' statement."
-    
+
 
 class NoIterableError(Exception):
     def __init__(self, position, iterator) -> None:
@@ -123,7 +120,7 @@ class NoIterableError(Exception):
 
     def __str__(self):
         return f"ERR! [{self.position}]: No iterable provided for iterator {self.iterator} in 'for' statement."
-    
+
 
 class InvalidExpressionError(Exception):
     def __init__(self, position) -> None:
@@ -133,13 +130,11 @@ class InvalidExpressionError(Exception):
         return f"ERR! [{self.position}]: Invalid expression."
 
 
-# TODO: ma podać możliwe a co dostał w zamian
 class InvalidAspectDefinitionSyntaxError(Exception):
     def __init__(self, position, aspect_name, missing_key_word) -> None:
         self.position = position
         self.aspect_name = aspect_name
         self.missing_key_word = missing_key_word
-        # self.token = token
 
     def __str__(self):
         return f"ERR! [{self.position}]: Aspect {self.aspect_name} missing {self.missing_key_word} keyword."
@@ -150,7 +145,6 @@ class InvalidAspectTargetError(Exception):
         self.position = position
         self.aspect_name = aspect_name
         self.expected_aspect_targets = expected_aspect_targets
-        # self.token = token
 
     def __str__(self):
         return f"ERR! [{self.position}]: Aspect {self.aspect_name} has target not in expected aspect targets {self.expected_aspect_targets}."
@@ -161,7 +155,6 @@ class InvalidAspectEventError(Exception):
         self.position = position
         self.aspect_name = aspect_name
         self.expected_aspect_events = expected_aspect_events
-        # self.token = token
 
     def __str__(self):
         return f"ERR! [{self.position}]: Aspect {self.aspect_name} has event not in expected aspect events {self.expected_aspect_events}."
@@ -184,9 +177,8 @@ class UncompleteOrExpressionError(Exception):
 
     def __str__(self):
         return f"ERR! [{self.position}]: Missing right term in or expression that starts with {self.left_term}."
-    
 
-# TODO: refactor
+
 class UncompleteAndExpressionError(Exception):
     def __init__(self, position, left_term) -> None:
         self.position = position
@@ -196,7 +188,6 @@ class UncompleteAndExpressionError(Exception):
         return f"ERR! [{self.position}]: Missing right term in and expression that starts with {self.left_term}."
 
 
-# TODO: refactor
 class UncompleteRelationExpressionError(Exception):
     def __init__(self, position, left_term) -> None:
         self.position = position
@@ -206,7 +197,6 @@ class UncompleteRelationExpressionError(Exception):
         return f"ERR! [{self.position}]: Missing right term in relation expression that starts with {self.left_term}."
 
 
-# TODO: refactor
 class UncompleteAdditiveExpressionError(Exception):
     def __init__(self, position, left_term) -> None:
         self.position = position
@@ -216,7 +206,6 @@ class UncompleteAdditiveExpressionError(Exception):
         return f"ERR! [{self.position}]: Missing right term in additive expression that starts with {self.left_term}."
 
 
-# TODO: refactor
 class UncompleteMultiplicativeExpressionError(Exception):
     def __init__(self, position, left_term) -> None:
         self.position = position
@@ -226,7 +215,6 @@ class UncompleteMultiplicativeExpressionError(Exception):
         return f"ERR! [{self.position}]: Missing right term in multiplicative expression that starts with {self.left_term}."
 
 
-# TODO: refactor
 class UncompleteUnaryExpressionError(Exception):
     def __init__(self, position) -> None:
         self.position = position
@@ -235,7 +223,6 @@ class UncompleteUnaryExpressionError(Exception):
         return f"ERR! [{self.position}]: Missing unary term."
 
 
-# TODO: refactor
 class UncompleteCastedExpressionError(Exception):
     def __init__(self, position, term) -> None:
         self.position = position
@@ -252,6 +239,7 @@ class InvalidParameterError(Exception):
 
     def __str__(self):
         return f"ERR! [{self.position}]: Invalid parameter occurred after parameter: {self.previous_parameter}."
+
 
 class InvalidArgumentError(Exception):
     def __init__(self, position, argument_before) -> None:

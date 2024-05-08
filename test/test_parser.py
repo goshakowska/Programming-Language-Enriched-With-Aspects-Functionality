@@ -177,27 +177,25 @@ def test_parser_from_source_file_aspect_declaration():
                                        AstType.ASPECT_ON_START,
                                        Identifier((1, 38),
                                                   'write'),
-                                                    
                                        StatementsBlock((1, 44),
                                                        [
                                                         AssignmentStatement(
-                                                            (2,14),
+                                                            (2, 14),
                                                             VariableDeclaration(
-                                                                (2,2),
+                                                                (2, 2),
                                                                 "counter",
                                                                 AstType.INT_TYPE
                                                             ),
-                                                            IntLiteral((2,16),
-                                                                        1)
+                                                            IntLiteral((2, 16),
+                                                                       1)
                                                         ),
                                                         ReturnStatement(
-                                                            (3,3),
-                                                            Identifier((3,10),
-                                                                        "counter")
+                                                            (3, 3),
+                                                            Identifier((3, 10),
+                                                                       "counter")
                                                         )
                                                        ])),
                                ],
                                []
                                )
     assert program == expected_program
-
