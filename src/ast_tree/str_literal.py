@@ -1,8 +1,9 @@
 from src.visitor.visitor import Visitor
 from src.ast_tree.ast_type import AstType
+from src.ast_tree.node import Node
 
 
-class StrLiteral:
+class StrLiteral(Node):
     def __init__(self, position, term) -> None:
         self.position = position
         self.term = term  # czy lepiej value?

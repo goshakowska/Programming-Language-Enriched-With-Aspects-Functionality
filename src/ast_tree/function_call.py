@@ -1,8 +1,9 @@
 from src.visitor.visitor import Visitor
 from src.ast_tree.ast_type import AstType
+from src.ast_tree.node import Node
 
 
-class FunctionCall:
+class FunctionCall(Node):
     def __init__(self, position, name, arguments) -> None:
         self.position = position
         self.name = name

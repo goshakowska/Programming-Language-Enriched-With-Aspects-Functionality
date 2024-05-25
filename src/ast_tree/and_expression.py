@@ -1,9 +1,10 @@
 from src.visitor.visitor import Visitor
 from src.visitor.checker_visitor import CheckerVisitor
 from src.ast_tree.ast_type import AstType
+from src.ast_tree.node import Node
 
 
-class AndExpression:
+class AndExpression(Node):
     def __init__(self, position, left_term, right_term) -> None:
         self.position = position
         self.left = left_term

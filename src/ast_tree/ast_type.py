@@ -20,19 +20,19 @@ class AstType(Enum):
     OR = auto()
     AND = auto()
 
-    BOOL_TYPE = auto()
-    FLOAT_TYPE = auto()
-    INT_TYPE = auto()
-    STR_TYPE = auto()
+    TYPE_BOOL = auto()
+    TYPE_FLOAT = auto()
+    TYPE_INT = auto()
+    TYPE_STR = auto()
 
     BOOL = auto()
     FLOAT = auto()
     INT = auto()
     STR = auto()
 
-    FUNCTION = auto()
+    TYPE_FUNCTION = auto()
 
-    ASPECT = auto()
+    TYPE_ASPECT = auto()
     ASPECT_ON_START = auto()  # start
     ASPECT_ON_END = auto()  # end
     ASPECT_ON_CALL = auto()  # call

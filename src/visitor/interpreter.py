@@ -1,4 +1,5 @@
-from abc import abstractmethod
+from visitor.visitor import Visitor
+
 from ast_tree.and_expression import AndExpression
 from ast_tree.aspect_definition import AspectDefinition
 from ast_tree.assignment_statement import AssignmentStatement
@@ -32,139 +33,112 @@ from ast_tree.str_literal import StrLiteral
 from ast_tree.unary_term import UnaryTerm
 from ast_tree.variable_declaration import VariableDeclaration
 from ast_tree.while_statement import WhileStatement
+'''
+Interpreter(Visitor):
+
+self.last_result = None
 
 
-class Visitor:
-    # def __init__(self, node: Node) -> None:
-    #     pass
+'''
 
-    @abstractmethod
+
+class Interpreter(Visitor):
+
     def visit_and_expression(self, node: AndExpression):
         pass
 
-    @abstractmethod
     def visit_aspect_definition(self, node: AspectDefinition):
         pass
 
-    @abstractmethod
     def visit_assignment_statement(self, node: AssignmentStatement):
         pass
 
-    @abstractmethod
     def visit_bool_literal(self, node: BoolLiteral):
         pass
 
-    @abstractmethod
     def visit_casted_term(self, node: CastedTerm):
         pass
 
-    @abstractmethod
     def visit_conditional_statement(self, node: ConditionalStatement):
         pass
 
-    @abstractmethod
     def visit_division_expression(self, node: DivisionExpression):
         pass
 
-    @abstractmethod
     def visit_equal_expression(self, node: EqualExpression):
         pass
 
-    @abstractmethod
     def visit_float_literal(self, node: FloatLiteral):
         pass
 
     def visit_for_statement(self, node: ForStatement):
         pass
 
-    @abstractmethod
     def visit_function_call(self, node: FunctionCall):
         pass
 
-    @abstractmethod
     def visit_function_definition(self, node: FunctionDefinition):
         pass
 
-    @abstractmethod
     def visit_greater_than_expression(self, node: GreaterThanExpression):
         pass
 
-    @abstractmethod
     def visit_greater_than_or_equal_expression(self, node: GreaterThanOrEqualExpression):
         pass
 
-    @abstractmethod
     def visit_identifier(self, node: Identifier):
         pass
 
-    @abstractmethod
     def visit_indexed_item(self, node: IndexedItem):
         pass
 
-    @abstractmethod
     def visit_int_literal(self, node: IntLiteral):
         pass
 
-    @abstractmethod
     def visit_less_than_expression(self, node: LessThanExpression):
         pass
 
-    @abstractmethod
     def visit_less_than_or_equal_expression(self, node: LessThanOrEqualExpression):
         pass
 
-    @abstractmethod
     def visit_minus_expression(self, node: MinusExpression):
         pass
 
-    @abstractmethod
     def visit_multiplication_expression(self, node: MultiplicationExpression):
         pass
 
-    @abstractmethod
     def visit_node(self, node: Node):  # TODO: Czy jest to potrzebne?
         pass
 
-    @abstractmethod
     def visit_not_equal_expression(self, node: NotEqualExpression):
         pass
 
-    @abstractmethod
     def visit_object_access(self, node: ObjectAccess):
         pass
 
-    @abstractmethod
     def visit_or_expression(self, node: OrExpression):
         pass
 
-    @abstractmethod
     def visit_plus_expression(self, node: PlusExpression):
         pass
 
-    @abstractmethod
     def visit_program(self, node: Program):
         pass
 
-    @abstractmethod
     def visit_return_statement(self, node: ReturnStatement):
         pass
 
-    @abstractmethod
     def visit_statements_block(self, node: StatementsBlock):
         pass
 
-    @abstractmethod
     def visit_str_literal(self, node: StrLiteral):
         pass
 
-    @abstractmethod
     def visit_unary_term(self, node: UnaryTerm):
         pass
 
-    @abstractmethod
     def visit_variable_declaration(self, node: VariableDeclaration):
         pass
 
-    @abstractmethod
     def visit_while_statement(self, node: WhileStatement):
         pass

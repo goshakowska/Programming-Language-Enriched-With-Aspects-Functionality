@@ -1,9 +1,10 @@
 from src.visitor.visitor import Visitor
 from src.visitor.checker_visitor import CheckerVisitor
 from src.ast_tree.ast_type import AstType
+from src.ast_tree.node import Node
 
 
-class Program:
+class Program(Node):
     def __init__(self, name: str, functions: list, aspects: list,
                  statements: list) -> None:
         self.name = name

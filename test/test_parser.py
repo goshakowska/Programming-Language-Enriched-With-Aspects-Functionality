@@ -1,11 +1,10 @@
-import io
 
 from src.parser.parser import Parser
 from src.lexer.lexer import Lexer
 from src.source.source import Source
 from src.ast_tree.ast_type import AstType
 
-from src.ast_tree.function_definiton import FunctionDefinition
+from ast_tree.function_definition import FunctionDefinition
 from src.ast_tree.aspect_definition import AspectDefinition
 from src.ast_tree.identifier import Identifier
 
@@ -20,13 +19,13 @@ from src.ast_tree.multiplication_expression import MultiplicationExpression
 from src.ast_tree.program import Program
 
 
-def create_parser_with_given_lexer_and_source(string):
-    return Parser(Lexer(Source(io.StringIO(string))))
+def create_parser_with_given_lexer_and_source(file_handler):
+    return Parser(Lexer(Source(file_handler)))
 
 
 def get_program(input_file_name):
     file_handler = open(input_file_name, "r", encoding="utf-8")
-    parser = create_parser_with_given_lexer_and_source(file_handler.read())
+    parser = create_parser_with_given_lexer_and_source(file_handler)
     return parser.parse_program(input_file_name)
 
 
@@ -40,7 +39,7 @@ def test_parser_assignment_program():
     assert assignment_program.statements[0].type ==\
         AstType.ASSIGNMENT_STATEMENT
     assert assignment_program.statements[0].expression.name == "myInt"
-    assert assignment_program.statements[0].expression.type == AstType.INT_TYPE
+    assert assignment_program.statements[0].expression.type == AstType.TYPE_INT
     assert assignment_program.statements[0].object_access.type == AstType.INT
     assert assignment_program.statements[0].object_access.term == 6
 
@@ -55,10 +54,10 @@ def test_parser_casted_term_program():
     assert casted_term_program.statements[0].type ==\
         AstType.ASSIGNMENT_STATEMENT
     assert casted_term_program.statements[0].expression.name == "myFloat"
-    assert casted_term_program.statements[0].expression.type == AstType.FLOAT_TYPE
+    assert casted_term_program.statements[0].expression.type == AstType.TYPE_FLOAT
     assert casted_term_program.statements[0].object_access.type == AstType.CASTED_TERM
     casted_term = casted_term_program.statements[0].object_access
-    assert casted_term.casted_type == AstType.INT_TYPE
+    assert casted_term.casted_type == AstType.TYPE_INT
     literal = casted_term.term
     assert literal.type == AstType.FLOAT
     assert literal.term == 6.1
@@ -74,7 +73,7 @@ def test_parser_unary_term_program():
     assert len(unary_term_program.statements) == 1
     assert unary_term_program.statements[0].type == AstType.ASSIGNMENT_STATEMENT
     assert unary_term_program.statements[0].expression.name == "myInt"
-    assert unary_term_program.statements[0].expression.type == AstType.INT_TYPE
+    assert unary_term_program.statements[0].expression.type == AstType.TYPE_INT
     assert unary_term_program.statements[0].object_access.type == AstType.UNARY_TERM
     unary_term = unary_term_program.statements[0].object_access
     assert unary_term.term.type == AstType.INT
@@ -93,7 +92,7 @@ def test_parser_function_declaration_program():
                                          VariableDeclaration(
                                           (2, 13),
                                           'intParam',
-                                          AstType.INT_TYPE)
+                                          AstType.TYPE_INT)
                                      ],
                                      StatementsBlock(
                                          (3, 1),
@@ -103,7 +102,7 @@ def test_parser_function_declaration_program():
                                                  VariableDeclaration(
                                                      (4, 2),
                                                      'outputInt',
-                                                     AstType.INT_TYPE
+                                                     AstType.TYPE_INT
                                                  ),
                                                  MultiplicationExpression(
                                                      (4, 19),
@@ -125,7 +124,7 @@ def test_parser_function_declaration_program():
                                              )
                                          ]
                                      ),
-                                     AstType.INT_TYPE,
+                                     AstType.TYPE_INT,
                                  )
                                ],
                                [
@@ -137,7 +136,7 @@ def test_parser_function_declaration_program():
                                      VariableDeclaration(
                                          (1, 1),
                                          'myInt',
-                                         AstType.INT_TYPE
+                                         AstType.TYPE_INT
                                         ),
                                      IntLiteral(
                                             (1, 13),
@@ -157,7 +156,7 @@ def test_parser_from_source_file_simple_program():
     assert len(program.statements) == 1
     assert program.statements[0].type == AstType.ASSIGNMENT_STATEMENT
     assert program.statements[0].expression.name == "myInt"
-    assert program.statements[0].expression.type == AstType.INT_TYPE
+    assert program.statements[0].expression.type == AstType.TYPE_INT
     assert program.statements[0].object_access.type == AstType.INT
     assert program.statements[0].object_access.term == 6
 
@@ -173,7 +172,7 @@ def test_parser_from_source_file_aspect_declaration():
                                    AspectDefinition(
                                        (1, 1),
                                        'logParams',
-                                       AstType.FUNCTION,
+                                       AstType.TYPE_FUNCTION,
                                        AstType.ASPECT_ON_START,
                                        Identifier((1, 38),
                                                   'write'),
@@ -184,7 +183,7 @@ def test_parser_from_source_file_aspect_declaration():
                                                             VariableDeclaration(
                                                                 (2, 2),
                                                                 "counter",
-                                                                AstType.INT_TYPE
+                                                                AstType.TYPE_INT
                                                             ),
                                                             IntLiteral((2, 16),
                                                                        1)

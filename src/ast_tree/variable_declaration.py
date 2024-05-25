@@ -1,7 +1,8 @@
 from src.visitor.visitor import Visitor
+from src.ast_tree.node import Node
 
 
-class VariableDeclaration:  # position, ast_type, name
+class VariableDeclaration(Node):  # position, ast_type, name
     def __init__(self, position, name, type) -> None:
         self.position = position
         self.name = name

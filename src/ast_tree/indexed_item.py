@@ -1,8 +1,9 @@
 from src.visitor.visitor import Visitor
 from src.ast_tree.ast_type import AstType
+from src.ast_tree.node import Node
 
 
-class IndexedItem:
+class IndexedItem(Node):
     def __init__(self, position, item, index) -> None:
         self.position = position
         self.item = item

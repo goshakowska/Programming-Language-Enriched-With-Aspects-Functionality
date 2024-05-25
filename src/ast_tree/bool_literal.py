@@ -1,9 +1,10 @@
 from src.visitor.visitor import Visitor
 from src.visitor.checker_visitor import CheckerVisitor
 from src.ast_tree.ast_type import AstType
+from src.ast_tree.node import Node
 
 
-class BoolLiteral:
+class BoolLiteral(Node):
     def __init__(self, position, term) -> None:
         self.position = position
         self.term = term

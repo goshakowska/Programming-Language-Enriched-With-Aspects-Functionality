@@ -1,8 +1,9 @@
 from src.visitor.visitor import Visitor
 from src.ast_tree.ast_type import AstType
+from src.ast_tree.node import Node
 
 
-class ObjectAccess:
+class ObjectAccess(Node):
     def __init__(self, position, item, dot_item) -> None:
         self.position = position
         self.item = item

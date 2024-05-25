@@ -1,10 +1,10 @@
 from src.lexer.lexer import Lexer
 from src.token.token_type import TokenType
 from src.token.token import Token
-from src.ast_tree.function_definiton import FunctionDefinition
+from ast_tree.function_definition import FunctionDefinition
 from src.ast_tree.aspect_definition import AspectDefinition
 from src.ast_tree.identifier import Identifier
-from src.ast_tree.selection_statement import SelectionStatement
+from ast_tree.conditional_statement import ConditionalStatement
 from src.ast_tree.function_call import FunctionCall
 from src.ast_tree.variable_declaration import VariableDeclaration
 from src.ast_tree.for_statement import ForStatement
@@ -82,12 +82,12 @@ ADDITIVE_OPERATORS = {TokenType.PLUS: PlusExpression,
 MULTIPLICATIVE_OPERATORS = {TokenType.MULTIPLICATION: MultiplicationExpression,
                             TokenType.DIVISION: DivisionExpression}
 
-VARIABLE_TYPES = {TokenType.BOOL_TYPE: AstType.BOOL_TYPE,
-                  TokenType.FLOAT_TYPE: AstType.FLOAT_TYPE,
-                  TokenType.INT_TYPE: AstType.INT_TYPE,
-                  TokenType.STR_TYPE: AstType.STR_TYPE}
+VARIABLE_TYPES = {TokenType.TYPE_BOOL: AstType.TYPE_BOOL,
+                  TokenType.TYPE_FLOAT: AstType.TYPE_FLOAT,
+                  TokenType.TYPE_INT: AstType.TYPE_INT,
+                  TokenType.TYPE_STR: AstType.TYPE_STR}
 
-ASPECT_TARGETS = {TokenType.FUNCTION_TYPE: AstType.FUNCTION}
+ASPECT_TARGETS = {TokenType.TYPE_FUNCTION: AstType.TYPE_FUNCTION}
 
 ASPECT_EVENTS = {TokenType.ASPECT_ON_START: AstType.ASPECT_ON_START,
                  TokenType.ASPECT_ON_END: AstType.ASPECT_ON_END,
@@ -210,7 +210,7 @@ class Parser:
     # function_declaration ::= "func", identifier, "(", [ parameters ], ")",
     # ":", return_type, block;
     def _parse_function_declaration(self, function_handler):
-        if self.current_token.type != TokenType.FUNCTION_TYPE:
+        if self.current_token.type != TokenType.TYPE_FUNCTION:
             return None
         position = self.current_token.get_position()
         self.consume_token()
@@ -237,7 +237,8 @@ class Parser:
             raise NoReturnTypeError(self.current_token.get_position(), name)
         block = self._parse_block()
         if not block:
-            raise NoExecutionBlockError(self.current_token.get_position(), name)
+            raise NoExecutionBlockError(self.current_token.get_position(),
+                                        name)
         function_handler(
             FunctionDefinition(position, name, params, block, return_type))
         return True
@@ -245,7 +246,7 @@ class Parser:
     # aspect_declaration ::= "aspect", identifier, ":", aspect_trigger, block;
     # regular_expression ::= string;
     def _parse_aspect_declaration(self, aspect_handler) -> AspectDefinition:
-        if self.current_token.type != TokenType.ASPECT_TYPE:
+        if self.current_token.type != TokenType.TYPE_ASPECT:
             return None
         position = self.current_token.get_position()
         self.consume_token()
@@ -263,9 +264,11 @@ class Parser:
         target, event, regular_expression = self._parse_aspect_trigger(name)
         block = self._parse_block()
         if not block:
-            raise NoExecutionBlockError(self.current_token.get_position(), name)
+            raise NoExecutionBlockError(self.current_token.get_position(),
+                                        name)
         aspect_handler(
-            AspectDefinition(position, name, target, event, regular_expression, block)
+            AspectDefinition(position, name, target, event,
+                             regular_expression, block)
             )
         return True
 
@@ -328,7 +331,8 @@ class Parser:
         token = \
             self._must_be_in_set_and_consume(VARIABLE_TYPES.keys(),
                                              UnexpectedTokenTypeError(
-                                                self.current_token.get_position(),
+                                                self.current_token
+                                                    .get_position(),
                                                 VARIABLE_TYPES.keys(),
                                                 self.current_token.get_type()
                                                 ))
@@ -344,7 +348,8 @@ class Parser:
 
     # type ::= "int" | "float" | "string" | "bool";
     def _parse_type(self):
-        if (token := self._should_be_in_set_and_consume(VARIABLE_TYPES.keys())) is None:
+        if (token := self._should_be_in_set_and_consume(VARIABLE_TYPES.keys()
+                                                        )) is None:
             return None
         token_type = token.get_type()
         return token_type
@@ -560,7 +565,7 @@ class Parser:
             else_block = self._parse_block()
             if not else_block:
                 raise NoExecutionBlockError(position, "'else'")
-        return SelectionStatement(position, condition, if_block, else_block)
+        return ConditionalStatement(position, condition, if_block, else_block)
 
     # assignment_or_call_statement ::= object_access, ["=", expression ] ";";
     def _parse_assignment_or_call_statement(self):

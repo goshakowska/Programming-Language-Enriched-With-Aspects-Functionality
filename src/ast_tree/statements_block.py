@@ -1,8 +1,9 @@
 from src.visitor.visitor import Visitor
 # from src.visitor.printer_visitor import
+from src.ast_tree.node import Node
 
 
-class StatementsBlock:
+class StatementsBlock(Node):
     def __init__(self, position, statements) -> None:
         self.position = position
         self.statements = statements

@@ -28,7 +28,7 @@ def test_lexer_with_single_token_with_space():
 def test_lexer_build_multiple_tokens_of_different_type():
     lexer = create_lexer_with_given_source("int myInt = 6")
     token = lexer.try_to_build_next_token()
-    assert token.get_type() == TokenType.INT_TYPE
+    assert token.get_type() == TokenType.TYPE_INT
     assert token.get_value() is None
     assert token.get_position() == (1, 1)
   
@@ -69,7 +69,7 @@ def test_lexer_build_multiple_tokens_of_different_type_2():
 def test_lexer_with_multiple_tokens_of_different_type_with_spaces():
     lexer = create_lexer_with_given_source('str        myString         "Ala ma kota."')
     token = lexer.try_to_build_next_token()
-    assert token.get_type() == TokenType.STR_TYPE
+    assert token.get_type() == TokenType.TYPE_STR
     assert token.get_value() is None
     assert token.get_position() == (1, 1)
 
@@ -369,7 +369,7 @@ def test_lexer_build_token_type_in():
 def test_lexer_build_token_type_bool_type():
     lexer = create_lexer_with_given_source("bool")
     token = lexer.try_to_build_next_token()
-    assert token.get_type() == TokenType.BOOL_TYPE
+    assert token.get_type() == TokenType.TYPE_BOOL
     assert token.get_value() is None
     assert token.get_position() == (1, 1)
 
@@ -377,7 +377,7 @@ def test_lexer_build_token_type_bool_type():
 def test_lexer_build_token_type_int_type():
     lexer = create_lexer_with_given_source("int")
     token = lexer.try_to_build_next_token()
-    assert token.get_type() == TokenType.INT_TYPE
+    assert token.get_type() == TokenType.TYPE_INT
     assert token.get_value() is None
     assert token.get_position() == (1, 1)
 
@@ -386,14 +386,14 @@ def test_lexer_build_token_type_int():
     lexer = create_lexer_with_given_source("6")
     token = lexer.try_to_build_next_token()
     assert token.get_type() == TokenType.INT
-    assert token.get_value() == "6"
+    assert token.get_value() == 6
     assert token.get_position() == (1, 1)
 
 
 def test_lexer_build_token_type_float_type():
     lexer = create_lexer_with_given_source("float")
     token = lexer.try_to_build_next_token()
-    assert token.get_type() == TokenType.FLOAT_TYPE
+    assert token.get_type() == TokenType.TYPE_FLOAT
     assert token.get_value() is None
     assert token.get_position() == (1, 1)
 
@@ -402,14 +402,30 @@ def test_lexer_build_token_type_float():
     lexer = create_lexer_with_given_source("6.5")
     token = lexer.try_to_build_next_token()
     assert token.get_type() == TokenType.FLOAT
-    assert token.get_value() == "6.5"
+    assert token.get_value() == 6.5
+    assert token.get_position() == (1, 1)
+
+
+def test_lexer_build_token_type_long_float():
+    lexer = create_lexer_with_given_source("666666.5")
+    token = lexer.try_to_build_next_token()
+    assert token.get_type() == TokenType.FLOAT
+    assert token.get_value() == 666666.5
+    assert token.get_position() == (1, 1)
+
+
+def test_lexer_build_token_type_long_float_():
+    lexer = create_lexer_with_given_source("666666.54321")
+    token = lexer.try_to_build_next_token()
+    assert token.get_type() == TokenType.FLOAT
+    assert token.get_value() == 666666.54321
     assert token.get_position() == (1, 1)
 
 
 def test_lexer_build_token_type_str_type():
     lexer = create_lexer_with_given_source("str")
     token = lexer.try_to_build_next_token()
-    assert token.get_type() == TokenType.STR_TYPE
+    assert token.get_type() == TokenType.TYPE_STR
     assert token.get_value() is None
     assert token.get_position() == (1, 1)
 
@@ -419,6 +435,38 @@ def test_lexer_build_token_type_str():
     token = lexer.try_to_build_next_token()
     assert token.get_type() == TokenType.STR
     assert token.get_value() == 'str'
+    assert token.get_position() == (1, 1)
+
+
+def test_lexer_build_token_type_str_escaped_escape_char():
+    lexer = create_lexer_with_given_source('"escaped\\ str"')  # FIXME!
+    token = lexer.try_to_build_next_token()
+    assert token.get_type() == TokenType.STR
+    assert token.get_value() == "escaped\\ str"
+    assert token.get_position() == (1, 1)
+
+
+def test_lexer_build_token_type_str_escaped_n_char():
+    lexer = create_lexer_with_given_source('"escaped\n str"')
+    token = lexer.try_to_build_next_token()
+    assert token.get_type() == TokenType.STR
+    assert token.get_value() == "escaped\n str"
+    assert token.get_position() == (1, 1)
+
+
+def test_lexer_build_token_type_str_escaped_t_char():
+    lexer = create_lexer_with_given_source('"escaped\t str"')
+    token = lexer.try_to_build_next_token()
+    assert token.get_type() == TokenType.STR
+    assert token.get_value() == "escaped\t str"
+    assert token.get_position() == (1, 1)
+
+
+def test_lexer_build_token_type_str_escaped_apostrophe_char():
+    lexer = create_lexer_with_given_source('"escaped\' str"')
+    token = lexer.try_to_build_next_token()
+    assert token.get_type() == TokenType.STR
+    assert token.get_value() == "escaped\' str"
     assert token.get_position() == (1, 1)
 
 
@@ -441,7 +489,7 @@ def test_lexer_build_token_type_comment():
 def test_lexer_build_token_type_function_type():
     lexer = create_lexer_with_given_source("func")
     token = lexer.try_to_build_next_token()
-    assert token.get_type() == TokenType.FUNCTION_TYPE
+    assert token.get_type() == TokenType.TYPE_FUNCTION
     assert token.get_value() is None
     assert token.get_position() == (1, 1)
 
@@ -457,7 +505,7 @@ def test_lexer_build_token_type_return():
 def test_lexer_build_token_type_aspect_type():
     lexer = create_lexer_with_given_source("aspect")
     token = lexer.try_to_build_next_token()
-    assert token.get_type() == TokenType.ASPECT_TYPE
+    assert token.get_type() == TokenType.TYPE_ASPECT
     assert token.get_value() is None
     assert token.get_position() == (1, 1)
 

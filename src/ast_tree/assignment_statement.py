@@ -1,9 +1,10 @@
 from src.visitor.visitor import Visitor
 from src.visitor.checker_visitor import CheckerVisitor
 from src.ast_tree.ast_type import AstType
+from src.ast_tree.node import Node
 
 
-class AssignmentStatement:
+class AssignmentStatement(Node):
     def __init__(self, position, expression, object_access) -> None:
         self.position = position
         self.object_access = object_access

@@ -14,6 +14,12 @@ class Lexer:
         self._token_line = 0
         self._token_column = 0
 
+        self._escape_sequences = {
+            "\\": "\\",
+            "t": "\t",
+            "'": "'",
+        }
+
         self.key_words = {
 
             "if": TokenType.IF,
@@ -22,16 +28,16 @@ class Lexer:
             "for": TokenType.FOR,
             "in": TokenType.IN,
 
-            "bool": TokenType.BOOL_TYPE,
-            "int": TokenType.INT_TYPE,
-            "float": TokenType.FLOAT_TYPE,
-            "str": TokenType.STR_TYPE,
+            "bool": TokenType.TYPE_BOOL,
+            "int": TokenType.TYPE_INT,
+            "float": TokenType.TYPE_FLOAT,
+            "str": TokenType.TYPE_STR,
             "null": TokenType.NULL,
 
-            "func": TokenType.FUNCTION_TYPE,
+            "func": TokenType.TYPE_FUNCTION,
             "return": TokenType.RETURN,
 
-            "aspect": TokenType.ASPECT_TYPE,
+            "aspect": TokenType.TYPE_ASPECT,
             "start": TokenType.ASPECT_ON_START,
             "end": TokenType.ASPECT_ON_END,
             "call": TokenType.ASPECT_ON_CALL,
@@ -107,19 +113,17 @@ class Lexer:
                          column=self._token_column)
 
     def handle_escape_char(self):
-        if self._character != "\\":
-            return self._character
-        self._next_char()
-        escaped_char_buffer = [self._character]
-        self._next_char()
-        if self._character in ("n", "t", "\"", "\\"):
-            escaped_char_buffer.append(self._character)
-            return escaped_char_buffer
+        if self._character == "\\":
+            self._next_char()
+            char_to_return = self._escape_sequences.get(self._character)
+            if not char_to_return:
+                raise TerminateLexerError("wrong syntax: \
+                                           unexpected symbol in string body",
+                                          self.source.get_line(),
+                                          self.source.get_column())
         else:
-            raise TerminateLexerError("wrong syntax: unexpected\
-                                       symbol in string body",
-                                      self.source.get_line(),
-                                      self.source.get_column())
+            char_to_return = self._character
+        return char_to_return
 
     def build_string(self):
 
@@ -129,7 +133,7 @@ class Lexer:
         self._next_char()
         while self._character != '"':
             if self._character == "":
-                raise TerminateLexerError("wrong syntax: unfinished string",
+                raise TerminateLexerError("wrong syntax: terminated string",
                                           self._token_line, self._token_column)
             if len(string_to_build) == self.max_string_length:
                 raise TerminateLexerError("exceeded max string length",
@@ -201,30 +205,28 @@ class Lexer:
                          line=self._token_line, column=self._token_column)
 
     def build_number(self):
-
-        while self._character.isdecimal():
-            is_float = False
-            number_buffer = [self._character]
-            self._next_char()
+        is_number = False
+        is_float = False
+        number_buffer = []
+        while self._character.isdecimal() or self._character == ".":
+            is_number = True
             if self._character == ".":
                 is_float = True
-                number_buffer.append(self._character)
-                self._next_char()
-            while self._character.isdecimal():
-                number_buffer.append(self._character)
-                self._next_char()
-            number_buffer = "".join(number_buffer)
-            if is_float:
-                number_buffer = float(number_buffer)
-                return Token(TokenType.FLOAT, value=number_buffer,
-                             line=self._token_line, column=self._token_column)
-            else:
-                number_buffer = int(number_buffer)
-                return Token(TokenType.INT, value=number_buffer,
-                             line=self._token_line, column=self._token_column)
+            number_buffer.append(self._character)
+            self._next_char()
+        number_buffer = "".join(number_buffer)
 
-        else:
+        if is_number is False:
             return None
+
+        if is_float:
+            number_buffer = float(number_buffer)
+            return Token(TokenType.FLOAT, value=number_buffer,
+                         line=self._token_line, column=self._token_column)
+        else:
+            number_buffer = int(number_buffer)
+            return Token(TokenType.INT, value=number_buffer,
+                         line=self._token_line, column=self._token_column)
 
     def build_comment(self):
 

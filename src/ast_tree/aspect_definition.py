@@ -1,9 +1,10 @@
 from src.visitor.visitor import Visitor
 from src.visitor.checker_visitor import CheckerVisitor
 from src.ast_tree.ast_type import AstType
+from src.ast_tree.node import Node
 
 
-class AspectDefinition:
+class AspectDefinition(Node):
     def __init__(self, position, name, target, event, regular_expression,
                  block):
         self.position = position
@@ -12,7 +13,7 @@ class AspectDefinition:
         self.event = event
         self.regular_expression = regular_expression
         self.block = block
-        self.type = AstType.ASPECT
+        self.type = AstType.TYPE_ASPECT
 
     def __repr__(self):
         return f"AspectDefinition({self.position}, {self.name}, {self.target},\
