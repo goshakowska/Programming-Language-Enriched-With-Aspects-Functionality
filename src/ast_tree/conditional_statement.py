@@ -23,4 +23,4 @@ class ConditionalStatement(Node):
                 other.else_block == self.else_block)
 
     def accept(self, visitor: Visitor):
-        return visitor.visit_conditional_statement(self)
+        visitor.visit_conditional_statement(self)

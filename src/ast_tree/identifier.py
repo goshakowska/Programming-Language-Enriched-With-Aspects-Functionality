@@ -17,4 +17,4 @@ class Identifier(Node):
                 other.name == self.name)
 
     def accept(self, visitor: Visitor):
-        return visitor.visit_identifier(self)
+        visitor.visit_identifier(self)

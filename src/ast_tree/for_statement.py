@@ -22,4 +22,4 @@ class ForStatement(Node):
                 other.execution_block == self.execution_block)
 
     def accept(self, visitor: Visitor):
-        return visitor.visit_for_statement(self)
+        visitor.visit_for_statement(self)

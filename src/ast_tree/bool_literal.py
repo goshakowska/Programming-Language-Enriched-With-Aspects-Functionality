@@ -18,7 +18,7 @@ class BoolLiteral(Node):
                 other.term == self.term)
 
     def accept(self, visitor: Visitor):
-        return visitor.visit_bool_literal(self)
+        visitor.visit_bool_literal(self)
 
     def accept_checker(self, visitor: CheckerVisitor):
-        return visitor.visit_bool_literal(self)
+        visitor.visit_bool_literal(self)

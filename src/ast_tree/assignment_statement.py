@@ -21,7 +21,7 @@ class AssignmentStatement(Node):
                 other.expression == self.expression)
 
     def accept(self, visitor: Visitor):
-        return visitor.visit_assignment_statement(self)
+        visitor.visit_assignment_statement(self)
 
     def accept_checker(self, visitor: CheckerVisitor):
-        return visitor.visit_assignment_statement(self)
+        visitor.visit_assignment_statement(self)

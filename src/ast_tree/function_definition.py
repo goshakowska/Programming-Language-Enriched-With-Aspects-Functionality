@@ -24,4 +24,4 @@ class FunctionDefinition(Node):
                 other.block == self.block)
 
     def accept(self, visitor: Visitor):
-        return visitor.visit_function_definition(self)
+        visitor.visit_function_definition(self)

@@ -19,4 +19,4 @@ class CastedTerm(Node):
                 other.casted_type == self.casted_type)
 
     def accept(self, visitor: Visitor):
-        return visitor.visit_casted_term(self)
+        visitor.visit_casted_term(self)

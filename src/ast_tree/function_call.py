@@ -18,4 +18,4 @@ class FunctionCall(Node):
                 other.name == self.name, other.arguments == self.arguments)  #
 
     def accept(self, visitor: Visitor):
-        return visitor.visit_function_call(self)
+        visitor.visit_function_call(self)

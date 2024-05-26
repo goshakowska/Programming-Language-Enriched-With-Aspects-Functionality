@@ -25,7 +25,7 @@ class Program(Node):
                 other.statements == self.statements)
 
     def accept(self, visitor: Visitor):
-        return visitor.visit_program(self)
+        visitor.visit_program(self)
 
     def accept_checker(self, checker: CheckerVisitor):
-        return checker.visit_program(self)
+        checker.visit_program(self)

@@ -16,4 +16,4 @@ class StatementsBlock(Node):
                 other.statements == self.statements)
 
     def accept(self, visitor: Visitor):
-        return visitor.visit_statements_block(self)
+        visitor.visit_statements_block(self)

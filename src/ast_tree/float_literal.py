@@ -17,4 +17,4 @@ class FloatLiteral(Node):
                 other.term == self.term)
 
     def accept(self, visitor: Visitor):
-        return visitor.visit_float_literal(self)
+        visitor.visit_float_literal(self)

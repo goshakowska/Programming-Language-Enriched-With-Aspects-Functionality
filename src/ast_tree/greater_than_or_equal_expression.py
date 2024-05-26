@@ -20,4 +20,4 @@ class GreaterThanOrEqualExpression(Node):
                 other.right_term == self.right_term)
 
     def accept(self, visitor: Visitor):
-        return visitor.visit_greater_than_or_equal_expression(self)
+        visitor.visit_greater_than_or_equal_expression(self)

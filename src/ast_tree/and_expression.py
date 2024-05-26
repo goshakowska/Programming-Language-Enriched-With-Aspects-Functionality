@@ -20,7 +20,7 @@ class AndExpression(Node):
                 other.right == self.right)
 
     def accept(self, visitor: Visitor):
-        return visitor.visit_and_expression(self)
+        visitor.visit_and_expression(self)
 
     def accept_checker(self, visitor: CheckerVisitor):
-        return visitor.visit_and_expression(self)
+        visitor.visit_and_expression(self)

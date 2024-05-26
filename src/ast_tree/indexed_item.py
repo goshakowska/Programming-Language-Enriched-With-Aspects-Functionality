@@ -19,4 +19,4 @@ class IndexedItem(Node):
                 other.index == self.index)
 
     def accept(self, visitor: Visitor):
-        return visitor.visit_indexed_item(self)
+        visitor.visit_indexed_item(self)

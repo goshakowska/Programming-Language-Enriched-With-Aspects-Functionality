@@ -17,4 +17,4 @@ class IntLiteral(Node):
                 other.term == self.term)
 
     def accept(self, visitor: Visitor):
-        return visitor.visit_int_literal(self)
+        visitor.visit_int_literal(self)

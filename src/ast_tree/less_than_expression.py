@@ -20,4 +20,4 @@ class LessThanExpression(Node):
                 other.right_term == self.right_term)
 
     def accept(self, visitor: Visitor):
-        return visitor.visit_less_than_expression(self)
+        visitor.visit_less_than_expression(self)

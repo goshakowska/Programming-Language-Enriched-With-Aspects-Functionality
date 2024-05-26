@@ -19,4 +19,4 @@ class OrExpression(Node):
                 other.right == self.right)
 
     def accept(self, visitor: Visitor):
-        return visitor.visit_or_expression(self)
+        visitor.visit_or_expression(self)

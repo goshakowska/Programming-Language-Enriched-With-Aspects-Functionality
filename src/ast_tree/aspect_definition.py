@@ -24,9 +24,9 @@ class AspectDefinition(Node):
                 other.name == self.name)
 
     def accept(self, visitor: Visitor):
-        return visitor.visit_aspect_definition(self)
+        visitor.visit_aspect_definition(self)
 
     def accept_checker(self, visitor: CheckerVisitor):
-        return visitor.visit_aspect_definition(self)
+        visitor.visit_aspect_definition(self)
 
 # aspect target, aspect trigger, aspect

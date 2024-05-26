@@ -20,4 +20,4 @@ class WhileStatement(Node):
                 other.execution_block == self.execution_block)
 
     def accept(self, visitor: Visitor):
-        return visitor.visit_while_statement(self)
+        visitor.visit_while_statement(self)

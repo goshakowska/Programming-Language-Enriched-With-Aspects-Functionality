@@ -20,4 +20,4 @@ class MultiplicationExpression(Node):
                 other.right_term == self.right_term)
 
     def accept(self, visitor: Visitor):
-        return visitor.visit_multiplication_expression(self)
+        visitor.visit_multiplication_expression(self)

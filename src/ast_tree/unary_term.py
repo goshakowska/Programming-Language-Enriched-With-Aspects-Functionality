@@ -17,4 +17,4 @@ class UnaryTerm(Node):
                 other.term == self.term)
 
     def accept(self, visitor: Visitor):
-        return visitor.visit_unary_term(self)
+        visitor.visit_unary_term(self)

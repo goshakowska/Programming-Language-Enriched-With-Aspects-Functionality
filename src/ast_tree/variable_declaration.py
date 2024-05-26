@@ -17,4 +17,4 @@ class VariableDeclaration(Node):  # position, ast_type, name
                 other.name == self.name and other.type == self.type)
 
     def accept(self, visitor: Visitor):
-        return visitor.visit_variable_declaration(self)
+        visitor.visit_variable_declaration(self)

@@ -19,4 +19,4 @@ class ObjectAccess(Node):
                 other.dot_item == self.dot_item)
 
     def accept(self, visitor: Visitor):
-        return visitor.visit_object_access(self)
+        visitor.visit_object_access(self)

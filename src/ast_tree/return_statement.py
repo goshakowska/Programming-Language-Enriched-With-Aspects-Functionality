@@ -17,4 +17,4 @@ class ReturnStatement(Node):
                 other.expression == self.expression)
 
     def accept(self, visitor: Visitor):
-        return visitor.visit_return_statement(self)
+        visitor.visit_return_statement(self)

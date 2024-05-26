@@ -20,4 +20,4 @@ class EqualExpression(Node):
                 other.right_term == self.right_term)
 
     def accept(self, visitor: Visitor):
-        return visitor.visit_equal_expression(self)
+        visitor.visit_equal_expression(self)
