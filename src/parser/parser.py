@@ -1,10 +1,10 @@
 from src.lexer.lexer import Lexer
 from src.token.token_type import TokenType
 from src.token.token import Token
-from ast_tree.function_definition import FunctionDefinition
+from src.ast_tree.function_definition import FunctionDefinition
 from src.ast_tree.aspect_definition import AspectDefinition
 from src.ast_tree.identifier import Identifier
-from ast_tree.conditional_statement import ConditionalStatement
+from src.ast_tree.conditional_statement import ConditionalStatement
 from src.ast_tree.function_call import FunctionCall
 from src.ast_tree.variable_declaration import VariableDeclaration
 from src.ast_tree.for_statement import ForStatement
@@ -87,6 +87,14 @@ VARIABLE_TYPES = {TokenType.TYPE_BOOL: AstType.TYPE_BOOL,
                   TokenType.TYPE_INT: AstType.TYPE_INT,
                   TokenType.TYPE_STR: AstType.TYPE_STR}
 
+RETURN_TYPES = {
+    TokenType.TYPE_BOOL: AstType.TYPE_BOOL,
+    TokenType.TYPE_FLOAT: AstType.TYPE_FLOAT,
+    TokenType.TYPE_INT: AstType.TYPE_INT,
+    TokenType.TYPE_STR: AstType.TYPE_STR,
+    TokenType.NULL: AstType.NULL
+}
+
 ASPECT_TARGETS = {TokenType.TYPE_FUNCTION: AstType.TYPE_FUNCTION}
 
 ASPECT_EVENTS = {TokenType.ASPECT_ON_START: AstType.ASPECT_ON_START,
@@ -142,11 +150,9 @@ class Parser:
     # program::= { declaration_statement |
     #              function_declaration  |
     #              aspect_declaration}
-    def parse_program(self, name):
-        functions = []
-        function_names = set()
-        aspects = []
-        aspect_names = set()
+    def parse_program(self, name=None):
+        functions = {}
+        aspects = {}
         declarations = []
         declaration_names = set()
 
@@ -163,18 +169,20 @@ class Parser:
                     declaration_to_add.name))
                     ) \
                 or self._parse_function_declaration(
-                lambda function_to_add: functions.append(function_to_add)
-                if function_to_add.name not in function_names
+                lambda function_to_add:
+                functions.setdefault(function_to_add.name, function_to_add)
+                if function_to_add.name not in functions
                 else raise_(FunctionRedefinitionError(
                     self.current_token.get_position(),
-                    function_to_add.name))
+                function_to_add.name))
                     ) \
                 or self._parse_aspect_declaration(
-                lambda aspect_to_add: aspects.append(aspect_to_add)
-                if aspect_to_add.name not in aspect_names
+                lambda aspect_to_add:
+                aspects.setdefault(aspect_to_add.name, aspect_to_add)
+                if aspect_to_add.name not in aspects
                 else raise_(AspectRedefinitionError(
-                    self.current_token.get_position(),
-                    aspect_to_add.name))
+                self.current_token.get_position(),
+                aspect_to_add.name))
                     ):
             continue
         if self.current_token.get_type() != TokenType.ETX:
@@ -336,7 +344,6 @@ class Parser:
                                                 VARIABLE_TYPES.keys(),
                                                 self.current_token.get_type()
                                                 ))
-        print("Cześć" + str(token))
         token_type = VARIABLE_TYPES.get(token.get_type())
         token = self._must_be_and_consume(TokenType.IDENTIFIER,
                                           UnexpectedTokenTypeError
@@ -410,8 +417,8 @@ class Parser:
         left_additive_factor = self._parse_additive_term()
         if left_additive_factor is None:
             return None
-        if relation_constructor := RELATION_OPERATORS.get(
-             self.current_token.get_type()):
+        if (relation_constructor := RELATION_OPERATORS.get(
+             self.current_token.get_type())):
             position = self.current_token.get_position()
             self.consume_token()
             right_additive_factor = self._parse_additive_term()
@@ -491,9 +498,11 @@ class Parser:
 
     # return_type ::= type | "null";
     def _parse_return_type(self):  # typ z AST
-        if self.current_token.get_type() not in VARIABLE_TYPES:
+        if self.current_token.get_type() not in VARIABLE_TYPES.keys():
             if self.current_token.get_type() == TokenType.NULL:
-                return None
+                self.consume_token()
+                return_type = AstType.NULL
+                return return_type
             else:
                 raise UnexpectedTokenTypeError(
                     self.current_token.get_position(),
@@ -523,7 +532,7 @@ class Parser:
     # statement ::= selection_statement | declaration_statement
     # | assignment_or_call_statement | iteration_statement | return_statement;
     def _parse_statement(self):  #
-        return self._parse_selection_statement() or\
+        return self._parse_condition_statement() or\
                self._parse_declaration_statement() or\
                self._parse_assignment_or_call_statement() or\
                self._parse_iteration_statement() or\
@@ -533,7 +542,7 @@ class Parser:
     # selection_statement ::= "if", "(", condition, ")", block,
     # ["else", block];
     # condition ::= expression;
-    def _parse_selection_statement(self):
+    def _parse_condition_statement(self):
         if self.current_token.get_type() != TokenType.IF:
             return None
         position = self.current_token.get_position()
