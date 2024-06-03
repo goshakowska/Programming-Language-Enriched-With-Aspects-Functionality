@@ -1,5 +1,5 @@
 import argparse
-import sys
+# import sys
 from src.ast_tree.program import Program
 from src.lexer.lexer import Lexer
 from src.parser.parser import Parser
@@ -29,19 +29,16 @@ def print_program_structure(program: Program):
 
 def main(arguments_to_parse):
     args = parse_cmdline_parameters(arguments_to_parse)
-    try:
-        with open(args.input_file, "r", encoding="utf-8") as file_handler:
-            source = Source(file_handler)
-            lexer = Lexer(source)
-            parser = Parser(lexer)
-            program = parser.parse_program(args.input_file)
-            if args.print:
-                print_program_structure(program)
-            interpreter = Interpreter(program, args.function, args.arguments)
-            interpreter.visit_program()
-    except Exception:
-        FileNotFoundError
+    with open(args.input_file, "r", encoding="utf-8") as file_handler:
+        source = Source(file_handler)
+        lexer = Lexer(source)
+        parser = Parser(lexer)
+        program = parser.parse_program(args.input_file)
+        if args.print:
+            print_program_structure(program)
+        interpreter = Interpreter(program, args.function, args.arguments)
+        interpreter.visit_program(program)
 
 
 if __name__ == "__main__":
-    main(sys.argv)
+    main(["main.py", "program.txt", "-p"])

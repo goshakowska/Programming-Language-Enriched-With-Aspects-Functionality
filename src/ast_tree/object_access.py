@@ -1,5 +1,5 @@
 from src.visitor.visitor import Visitor
-from src.ast_tree.ast_type import AstType
+# from src.ast_tree.ast_type import AstType
 from src.ast_tree.node import Node
 
 
@@ -8,7 +8,7 @@ class ObjectAccess(Node):
         self.position = position
         self.item = item
         self.dot_item = dot_item
-        self.type = AstType.OBJECT_ACCESS
+        # self.type = AstType.OBJECT_ACCESS
 
     def __repr__(self):
         return f"ObjectAccess({self.position}, {self.item}, {self.dot_item})"

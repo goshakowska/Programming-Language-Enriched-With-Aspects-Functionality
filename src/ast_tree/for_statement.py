@@ -1,5 +1,5 @@
 from src.visitor.visitor import Visitor
-from src.ast_tree.ast_type import AstType
+# from src.ast_tree.ast_type import AstType
 from src.ast_tree.node import Node
 
 
@@ -9,7 +9,7 @@ class ForStatement(Node):
         self.iterator = iterator
         self.iterable = iterable
         self.execution_block = execution_block
-        self.type = AstType.FOR_STATEMENT
+        # self.type = AstType.FOR_STATEMENT
 
     def __repr__(self):
         return f"ForStatement({self.position}, {self.iterator},\

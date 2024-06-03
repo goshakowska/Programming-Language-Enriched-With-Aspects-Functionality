@@ -1,17 +1,17 @@
 from src.visitor.visitor import Visitor
 from src.visitor.checker_visitor import CheckerVisitor
-from src.ast_tree.ast_type import AstType
+# from src.ast_tree.ast_type import AstType
 from src.ast_tree.node import Node
 
 
 class Program(Node):
-    def __init__(self, name: str, functions: list, aspects: list,
-                 statements: list) -> None:
+    def __init__(self, name: str, functions: dict, aspects: dict,
+                 statements: list) -> None:  # TODO!
         self.name = name
         self.functions = functions
         self.aspects = aspects
         self.statements = statements
-        self.type = AstType.PROGRAM
+        # self.type = AstType.PROGRAM
 
     def __repr__(self):
         return f"Program({self.name}, {self.functions}, {self.aspects},\

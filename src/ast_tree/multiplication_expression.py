@@ -1,5 +1,5 @@
 from src.visitor.visitor import Visitor
-from src.ast_tree.ast_type import AstType
+# from src.ast_tree.ast_type import AstType
 from src.ast_tree.node import Node
 
 
@@ -8,7 +8,7 @@ class MultiplicationExpression(Node):
         self.position = position
         self.left_term = left_term
         self.right_term = right_term
-        self.type = AstType.MULTIPLICATION
+        # self.type = AstType.MULTIPLICATION
 
     def __repr__(self):
         return f"MultiplicationExpression({self.position}, {self.left_term},\

@@ -1,5 +1,5 @@
 from src.visitor.visitor import Visitor
-from src.ast_tree.ast_type import AstType
+# from src.ast_tree.ast_type import AstType
 from src.ast_tree.node import Node
 
 
@@ -9,7 +9,7 @@ class ConditionalStatement(Node):
         self.expression = expression
         self.if_block = if_block
         self.else_block = else_block
-        self.type = AstType.CONDITIONAL_STATEMENT
+        # self.type = AstType.CONDITIONAL_STATEMENT
 
     def __repr__(self):
         return f"ConditionalStatement(\

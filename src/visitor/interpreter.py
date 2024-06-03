@@ -10,6 +10,15 @@ from src.visitor.interpreter_errors import OrExpressionError
 from src.visitor.interpreter_errors import AndExpressionError
 from src.visitor.interpreter_errors import NegatedTermError
 from src.visitor.interpreter_errors import CastingTypeError
+from src.visitor.interpreter_errors import EmbeddedFunctionOverrideError
+from src.visitor.interpreter_errors import FunctionNotFoundError
+from src.visitor.interpreter_errors import WrongNumberOfArgumentsError
+from src.visitor.interpreter_errors import WrongArgumentTypeError
+from src.visitor.interpreter_errors import ReturnOutsideFunctionCallError
+from src.visitor.interpreter_errors import DivisionByZeroError
+from src.visitor.interpreter_errors import IncorrectReturnTypeError
+from src.visitor.interpreter_errors import UndefinedFunctionError
+from src.visitor.interpreter_errors import ReturnInAspectDefinitionError
 
 from src.visitor.visitor import Visitor
 from src.ast_tree.and_expression import AndExpression
@@ -45,69 +54,35 @@ from src.ast_tree.str_literal import StrLiteral
 from src.ast_tree.unary_term import UnaryTerm
 from src.ast_tree.variable_declaration import VariableDeclaration
 from src.ast_tree.while_statement import WhileStatement
+from src.ast_tree.ast_type import AstType
 
-from abc import ABC, abstractmethod
+from src.visitor.visitable import PrintFunction
+from src.visitor.environment import Environment, Value
 
-TYPE_CONVERSIONS = {
-    (int, float): lambda x: float(x),
-    (float, int): lambda x: int(x) if x.is_integer() else None,
-    (int, str): lambda x: str(x),
-    (float, str): lambda x: str(x),
-    (str, bool): lambda x: bool({"true": 1, "false": 0}.get(x)),
-    (int, bool): lambda x: bool(x) if x in {0, 1} else None
-}
-
-
-class ScopeContext:
-    def __init__(self) -> None:
-        self.variables = {}
-        # self.parent_context  # ? czy potrzebne?
-    
-    def add_variable(self, name: str, value) -> None:
-        self.variables[name] = value
-
-
-class CallContext:  # handlery
-    def __init__(self, return_type) -> None:
-        self._count_nested = 0
-        self._return_type = return_type
-        self.scopes = []  # ! jako pierwszy scope mają być argumenty wywołania funkcji
-
-    def push_scope(self) -> None:
-        self.scopes.append(ScopeContext())
-
-    def pop_scope(self) -> None:
-        self.scopes.pop()
-
-    def get_last_scope(self):
-        return self.scopes[-1]
-
-
-class Env:  # TODO: handlery, call_context, globalny_scope
-    def __init__(self) -> None:
-        self.call_contexts = []
-
-    def push_context(self, call_context: CallContext) -> None:
-        self.call_contexts.append(call_context)
-
-    def pop_context(self) -> None:
-        self.call_contexts.pop()
-
-    def get_last_context(self) -> CallContext:
-        return self.call_contexts[-1]
 
 
 class Interpreter(Visitor):
 
     def __init__(self, program: Program, start_function_name: str = "", *args) -> None:
         self.program = program
+
+        self.functions = program.functions
+        self.statements = program.statements
+        self.aspects = program.aspects
+
+        self.enabled_aspects = set(self.aspects.keys())
+
         self._program_root = start_function_name
-        self._last_result = None
-        if self.program_root:  # ? czy to jakoś inaczej zrealizować?
+        if self._program_root:
             self.input_parameters = list(args)
-        # dorzucić embedded functions do programu
-        # self._stack = Stack()  # class Env
-        # self._global_scope = CallContext()
+
+        self._last_result = None
+        self._return_flag = False
+
+        self.EMBEDDED_FUNCTIONS = {"print": PrintFunction}
+        self.add_embedded_functions_to_program(self.EMBEDDED_FUNCTIONS)
+
+        self.environment = Environment()
 
     def get_last_result(self):
         last_result = self._last_result
@@ -115,71 +90,128 @@ class Interpreter(Visitor):
         return last_result
 
     def set_last_result(self, result):
-        self._last_result = result  # * ma móc przechowywać listy
+        self._last_result = result
 
+    def add_embedded_functions_to_program(self, embedded_functions: dict):
+        program_function_definitions = self.functions
+        for name, function in embedded_functions.items():
+            if name not in program_function_definitions.keys():
+                program_function_definitions[name] = function
+            else:
+                raise EmbeddedFunctionOverrideError(name)
 
-    class EmbeddedFunction(ABC):
-        # def __init__(self, name: str) -> None:  # ? czy potrzebne?
-        #     self._name = name
+    def visit_print_function(self, node: PrintFunction):
+        node.arguments.accept(self)
+        if isinstance(self.get_last_result(), str):
+            print(self.get_last_result())
+        else:
+            print(str(self.get_last_result()))  # ? czy tak można?
 
-        def name(self):
-            return self._name
+    def _enable_aspect(self, aspect_name: str):  # jakie rozwiązanie lepsze - pole enabled w Aspect, czy zbiór enabled w interpreterze?
+        if aspect_name not in self.enabled_aspects:
+            self.aspects.get(aspect_name).enabled = True
+            self.enabled_aspects.add(aspect_name)
 
-        @abstractmethod
-        def __call__(self, *args):
-            pass
-        # print, enabled, count, name
+    def _disable_aspect(self, aspect_name: str):
+        if aspect_name in self.enabled_aspects:
+            self.aspects.get(aspect_name).enabled = False
+            self.enabled_aspects.remove(aspect_name)
 
-    class PrintFunction(EmbeddedFunction):
+    def _check_if_function_is_target(self, aspect: AspectDefinition,
+                                     function_name: str):
+        return function_name in aspect.target
 
-        def __call__(self, node: Identifier):
-            element_to_print = node.accept(self)
-            if isinstance(element_to_print, str):
-                print(element_to_print)
-
-    # czy aby na pewno?
-    class CountFunction(EmbeddedFunction):  # <nazwa_aspektu>.enabled
-
-        def __call__(self, *args):  # ! args typu param
-            return len(args)
-
-    class EnableFunction(EmbeddedFunction):
-
-        def __call__(self, *args):
-            return True
-    # koniec czy aby na pewno?
 
     """
     PROGRAM
     """
 
     def visit_program(self, node: Program):
-        """
-        1) sprawdzam czy program_root znajduje się w zbiorze nazw funkcji:
-            - jeżeli nie, to mamy błąd semantyczny
-            - jeżeli tak, to sprawdza czy są argumenty do naszego interpretera
-        """
-        # env
-        if self.program_root and self.program_root in self.program.functions:  # TODO: po nazwie odnaleźć programu
+
+        if self._program_root:
+            if self._program_root not in self.functions:
+                raise FunctionNotFoundError(self._program_root)
             if self.input_parameters:
                 self.set_last_result(self.input_parameters)
-            self.program_root.accept(self)
+            self._program_root.accept(self)
 
         for statement in node.statements:
             statement.accept(self)
 
-        
-        pass
-
     """
     DEFINITIONS
     """
+
     def visit_aspect_definition(self, node: AspectDefinition):
-        pass
+        if not self._check_if_function_is_target(node.target, self._last_result[0]):
+            return None
+        for statement in node.block:
+            if isinstance(statement, ReturnStatement):
+                raise ReturnInAspectDefinitionError(statement.position, node.name)
+            statement.accept(self)
+
+    # def visit_active_on_start_aspect_definition(self, node: AspectDefinition):
+    #     if not self._check_if_function_is_target(node.target, self._last_result[0]):
+    #         return None
+    #     function_name, function_parameters = self._last_result
+    #     for statement in node.block:
+    #         statement.accept(self)
+
+    # def visit_active_on_end_aspect_definition(self, node: AspectDefinition):
+    #     if not self._check_if_function_is_target(node.target, self._last_result[0]):
+    #         return None
+    #     function_name, return_value = self._last_result
+    #     for statement in node.block:
+    #         statement.accept(self)
+
+    # def visit_active_on_count_aspect_definition(self, node: AspectDefinition):
+    #     pass
+
+    def _check_input_parameters(self,
+                                function: FunctionDefinition,
+                                provided_arguments: list):
+        if len(provided_arguments) != len(function.params):
+            raise WrongNumberOfArgumentsError(function.position,
+                                              function.name,
+                                              len(function.params),
+                                              len(provided_arguments))
+        for provided_argument, input_parameter in zip(provided_arguments,
+                                                      function.params):
+            if input_parameter.type != provided_argument.type:
+                raise WrongArgumentTypeError(function.position,
+                                             input_parameter.name,
+                                             input_parameter.type,
+                                             provided_argument.type)
+            self.environment.add_variable(input_parameter.name,
+                                          provided_argument)
+            self.set_last_result(list(function.name, provided_arguments))
 
     def visit_function_definition(self, node: FunctionDefinition):
-        # jak przekazać argumenty wywołania?
-        # porównanie arguments a parametry
+
+        # * w self.last_result mam teraz parametry wywołania funkcji
+        self._check_input_parameters(node, self.get_last_result())
+        # self.set_last_result(list(node.name, arguments))  # * check_input_parameters ustawia last_result na nazwę funkcji i parametry
+
+        # last_result będzie nadpisywany przy kolejnych ewaluacjach aspektów - gdzie przechowywać nazwę i parametry wywołania
+        for aspect_name in self.enabled_aspects:
+            if self.aspects.get(aspect_name).event == "start":
+                self.visit_aspect_definition(self.aspects.get(aspect_name))  # na strukturze
+
+        for statement in node.block:
+            statement.accept(self)
+
+        return_value = None  # zamieniłam wynik na result
+        if self._return_flag is True:
+            return_value = self.get_last_result()
+            self._return_flag = False
+        if not isinstance(return_value, node.return_type):
+            raise IncorrectReturnTypeError(node.position, node.name, node.return_type, return_value)
+
+        self.set_last_result(node.name, return_value)
+
+        for aspect_name in self.enabled_aspects:
+            if self.aspects.get(aspect_name).event == "end":
+                self.visit_active_on_end_aspect_definition(self.aspects.get(aspect_name))
 
 
     """
@@ -187,56 +219,126 @@ class Interpreter(Visitor):
     """
 
     def visit_identifier(self, node: Identifier):
-        pass
+
+        value = self.environment.get_variable(node.name)  # TODO: czy tu jest dobrze?
+        self.set_last_result(value)
+
+    def _in_functions_definitions(self, name: str):
+
+        return name in self.functions
+
+    def _check_if_embedded_function(self, function):
+        return function in self.EMBEDDED_FUNCTIONS.values()
+
+    def prepare_arguments_for_function_call(self, arguments):
+
+        input_parameters = []
+        for argument in arguments:
+            argument.accept(self)  # zwraca obiekt typu Value
+            input_parameters.append(self.get_last_result())
+        self.set_last_result(input_parameters)
 
     def visit_function_call(self, node: FunctionCall):
-        function_name = node.name
-        if function_name not in self.program.functions:
-            pass  # TODO: błąd semantyczny
 
-        function_scope = ScopeContext(self.get_last_result())
-        function_call_context = CallContext()
-        self._stack.push_context()
-
-        arguments = node.arguments
-
-        for argument in arguments:
-            argument.accept(self)
-            function_scope.variables = self.get_last_result()
-            self.reset_last_result()
+        if not (function := self.functions.get(node.name)):
+            raise UndefinedFunctionError(node.position, node.name)
+        if self._check_if_embedded_function(function):
+            function.accept(self)
+        else:
+            self.environment.enter_function_call(function.name, function.return_type)
+            self.prepare_arguments_for_function_call(node.arguments)
+            function.accept(self)
+            self.environment.exit_function_call()
 
     def visit_statements_block(self, node: StatementsBlock):
+
+        self.environment.enter_block()
         for statement in node.statements:
             statement.accept(self)
-            ...
+            if self._return_flag is True:
+                break
+        self.environment.exit_block()
 
     def visit_assignment_statement(self, node: AssignmentStatement):
-        pass
+        # FIXME!
+        node.object_access.accept(self)
+        variable_value = self.get_last_result()
+        node.expression.accept(self)  # to powinno zwracać nazwę zmiennej, a zwraca None
+        variable_name = self.get_last_result()
+        self.environment.add_variable(variable_name,
+                                      variable_value)
 
-    def visit_object_access(self, node: ObjectAccess):
-        pass
+    def visit_object_access(self, node: ObjectAccess):  #! czy dobrze
+        # jak to traktować przy interpretacji?
+        # node.item.accept(self)
+        # root_object = self.get_last_result()
+        # if self.environment.get_variable(root_object) is None:
+        #     raise UndefinedVariableError(node.position, root_object)
+
+        # if node.dot_item:
+        #     pass
+        # node.dot_item.accept(self)
+        # if (attribute := self.get_last_result()) is not None:
+            ...
+        
 
     def visit_indexed_item(self, node: IndexedItem):
-        pass
+        ...
+        # sprawdzić czy iterable
+        # sprawdzić długość i czy indeks jest w range
+        # last_result ma to, co jest pod danym indeksem
 
     def visit_conditional_statement(self, node: ConditionalStatement):
-        if_scope = ScopeContext()
-        self._stack.push_context(if_scope)
 
-        pass
+        node.expression.accept(self)
+        condition_evaluation = self.get_last_result()
+        # TODO: if, ze sprawdzeniem, czy jest to wartość boolowska bądź null
+        if condition_evaluation:
+            self.environment.create_new_scope()
+            node.if_block.accept(self)
+            self.environment.delete_current_scope()
+            if node.else_block:
+                self.environment.create_new_scope()
+                node.else_block.accept(self)
+                self.environment.delete_current_scope()
 
     def visit_for_statement(self, node: ForStatement):
-        pass
+
+        node.iterable.accept(self)
+        iterable = self.get_last_result()
+        node.iterator.accept(self)
+        if isinstance(iterable, list):
+            for _ in iterable:  # czy tu potrzebny jest iterable?
+                self.environment.create_new_scope()
+                node.execution_block.accept(self)
+                self.environment.delete_current_scope()
+                if self._return_flag is True:
+                    break
 
     def visit_while_statement(self, node: WhileStatement):
-        pass
+
+        node.condition.accept(self)
+        condition_evaluation = self.get_last_result()
+        while condition_evaluation:
+            node.block.accept(self)
+            if self._return_flag is True:
+                break
+            node.condition.accept(self)
+            condition_evaluation = self.get_last_result()
 
     def visit_variable_declaration(self, node: VariableDeclaration):
-        pass
+
+        value = Value(None, node.type)
+        self.set_last_result(node.name)
+        self.environment.add_variable(node.name, value)
 
     def visit_return_statement(self, node: ReturnStatement):
-        return_expression = node.expression
-        
+
+        if not self.environment.check_if_in_call_context():
+            raise ReturnOutsideFunctionCallError(node.position)
+        node.expression.accept(self)
+        self._return_flag = True
+
 
     """
     EXPRESSIONS
@@ -247,7 +349,7 @@ class Interpreter(Visitor):
         node.right_term.accept(self)
         right_term = self.get_last_result()
         if isinstance(left_term, bool) and isinstance(right_term, bool):
-            self.set_last_result(left_term or right_term)
+            self.set_last_result(Value(left_term or right_term, AstType.TYPE_BOOL))
         else:
             raise OrExpressionError(node.position, left_term, right_term)
 
@@ -257,7 +359,7 @@ class Interpreter(Visitor):
         node.right_term.accept(self)
         right_term = self.get_last_result()
         if isinstance(left_term, bool) and isinstance(right_term, bool):
-            self.set_last_result(left_term and right_term)
+            self.set_last_result(Value(left_term and right_term, AstType.TYPE_BOOL))
         else:
             raise AndExpressionError(node.position, left_term, right_term)
 
@@ -266,14 +368,14 @@ class Interpreter(Visitor):
         left_term = self.get_last_result()
         node.right_term.accept(self)
         right_term = self.get_last_result()
-        self.set_last_result(True) if left_term == right_term else self.set_last_result(False)
+        self.set_last_result(Value(True, AstType.TYPE_BOOL)) if left_term == right_term else self.set_last_result(Value(False, AstType.TYPE_BOOL))
 
     def visit_not_equal_expression(self, node: NotEqualExpression):
         node.left_term.accept(self)
         left_term = self.get_last_result()
         node.right_term.accept(self)
         right_term = self.get_last_result()
-        self.set_last_result(False) if left_term == right_term else self.set_last_result(True)
+        self.set_last_result(Value(False, AstType.TYPE_BOOL)) if left_term == right_term else self.set_last_result(Value(True, AstType.TYPE_BOOL))
 
     def visit_greater_than_expression(self, node: GreaterThanExpression):
         node.left_term.accept(self)
@@ -281,9 +383,11 @@ class Interpreter(Visitor):
         node.right_term.accept(self)
         right_term = self.get_last_result()
         if isinstance(left_term, (int, float)) and isinstance(right_term, (int, float)):
-            self.set_last_result(True) if left_term > right_term else self.set_last_result(False)
+            self.set_last_result(Value(True, AstType.TYPE_BOOL)) if left_term > right_term else self.set_last_result(Value(False, AstType.TYPE_BOOL))
         else:
-            raise GreaterThanExpressionError(node.position, left_term, right_term)
+            raise GreaterThanExpressionError(node.position,
+                                             left_term,
+                                             right_term)
 
     def visit_greater_than_or_equal_expression(self, node: GreaterThanOrEqualExpression):
         node.left_term.accept(self)
@@ -291,7 +395,7 @@ class Interpreter(Visitor):
         node.right_term.accept(self)
         right_term = self.get_last_result()
         if isinstance(left_term, (int, float)) and isinstance(right_term, (int, float)):
-            self.set_last_result(True) if left_term >= right_term else self.set_last_result(False)
+            self.set_last_result(Value(True, AstType.TYPE_BOOL)) if left_term >= right_term else self.set_last_result(Value(False, AstType.TYPE_BOOL))
         else:
             raise GreaterThanOrEqualExpressionError(node.position, left_term, right_term)
 
@@ -301,7 +405,7 @@ class Interpreter(Visitor):
         node.right_term.accept(self)
         right_term = self.get_last_result()
         if isinstance(left_term, (int, float)) and isinstance(right_term, (int, float)):
-            self.set_last_result(True) if left_term < right_term else self.set_last_result(False)
+            self.set_last_result(Value(True, AstType.TYPE_BOOL)) if left_term < right_term else self.set_last_result(Value(False, AstType.TYPE_BOOL))
         else:
             raise LessThanExpressionError(node.position, left_term, right_term)
 
@@ -311,7 +415,7 @@ class Interpreter(Visitor):
         node.right_term.accept(self)
         right_term = self.get_last_result()
         if isinstance(left_term, (int, float)) and isinstance(right_term, (int, float)):
-            self.set_last_result(True) if left_term <= right_term else self.set_last_result(False)
+            self.set_last_result(Value(True, AstType.TYPE_BOOL)) if left_term <= right_term else self.set_last_result(Value(False, AstType.TYPE_BOOL))
         else:
             raise LessThanOrEqualExpressionError(node.position, left_term, right_term)
 
@@ -321,19 +425,29 @@ class Interpreter(Visitor):
         node.right_term.accept(self)
         right_term = self.get_last_result()
         if isinstance(left_term, (int, float)) and isinstance(right_term, (int, float)):
-            self.set_last_result(left_term - right_term)
+            result_value = left_term - right_term
+            if isinstance(left_term, int) and isinstance(right_term, int):
+                result_type = AstType.TYPE_INT
+            else:
+                result_type = AstType.TYPE_FLOAT
+            self.set_last_result(Value(result_value, result_type))
         else:
             raise SubtractionExpressionError(node.position, left_term, right_term)
 
     def visit_plus_expression(self, node: PlusExpression):  # TODO: dodanie możliwości agregowania stringów (bądź str + float/int)
-        node.left_term.accept(self)
+        node.left_term.accept(self)  # Value
         left_term = self.get_last_result()
-        node.right_term.accept(self)
+        node.right_term.accept(self)  # Value
         right_term = self.get_last_result()
-        if isinstance(left_term, (int, float)) and isinstance(right_term, (int, float)):
-            self.set_last_result(left_term + right_term)
+        if isinstance(left_term.value, (int, float)) and isinstance(right_term.value, (int, float)):
+            result_value = left_term.value + right_term.value
+            if isinstance(left_term.value, int) and isinstance(right_term.value, int):
+                result_type = AstType.TYPE_INT
+            else:
+                result_type = AstType.TYPE_FLOAT
+            self.set_last_result(Value(result_value, result_type))
         else:
-            raise AdditionExpressionError(node.position, left_term, right_term)
+            raise AdditionExpressionError(node.position, left_term.value, right_term.value)
 
     def visit_division_expression(self, node: DivisionExpression):
         node.left_term.accept(self)
@@ -341,7 +455,14 @@ class Interpreter(Visitor):
         node.right_term.accept(self)
         right_term = self.get_last_result()
         if isinstance(left_term, (int, float)) and isinstance(right_term, (int, float)):
-            self.set_last_result(left_term / right_term)
+            if right_term == 0:
+                raise DivisionByZeroError(node.position, left_term)
+            result_value = left_term / right_term
+            if isinstance(left_term, int) and isinstance(right_term, int):
+                result_type = AstType.TYPE_INT
+            else:
+                result_type = AstType.TYPE_FLOAT
+            self.set_last_result(Value(result_value, result_type))
         else:
             raise DivisionExpressionError(node.position, left_term, right_term)
 
@@ -351,15 +472,18 @@ class Interpreter(Visitor):
         node.right_term.accept(self)
         right_term = self.get_last_result()
         if isinstance(left_term, (int, float)) and isinstance(right_term, (int, float)):
-            self.set_last_result(left_term * right_term)
+            result_value = left_term * right_term
+            if isinstance(left_term, int) and isinstance(right_term, int):
+                result_type = AstType.TYPE_INT
+            else:
+                result_type = AstType.TYPE_FLOAT
+            self.set_last_result(Value(result_value, result_type))
         else:
             raise MultiplicationExpressionError(node.position, left_term, right_term)
 
     """
     OTHER
     """
-    def visit_node(self, node: Node):  # TODO: Czy jest to potrzebne?
-        pass
 
     """
     TERMS
@@ -372,35 +496,39 @@ class Interpreter(Visitor):
             bool: lambda x: not x
         }
         if negation_conversion := negation_functions.get(type(term)):
-            self.set_last_result(negation_conversion(term))
+            self.set_last_result(Value(negation_conversion(term)))  # ? jak otrzymać typ?
         else:
             raise NegatedTermError(node.position, term)
 
+    # float myFloat = myInt as float;
     def visit_casted_term(self, node: CastedTerm):
-        node.term.accept(self)
+        TYPE_CONVERSIONS = {
+                (AstType.TYPE_INT, AstType.TYPE_FLOAT): lambda x: float(x),
+                (AstType.TYPE_FLOAT, AstType.TYPE_INT): lambda x: int(x) if x.is_integer() else None,
+                (AstType.TYPE_INT, AstType.TYPE_STR): lambda x: str(x),
+                (AstType.TYPE_FLOAT, AstType.TYPE_STR): lambda x: str(x),
+                (AstType.TYPE_STR, AstType.TYPE_BOOL): lambda x: bool({"true": 1, "false": 0}.get(x)),
+                (AstType.TYPE_INT, AstType.TYPE_BOOL): lambda x: bool(x) if x in {0, 1} else None
+            }
+        node.term.accept(self)  # jak to mądrze zrobić?
         term = self.get_last_result()
-        node.casted_type.accept(self)
-        type_to_cast = self.get_last_result()
-        node.casted_type.term.type.accept(self)
-        previous_type = self.get_last_result()
-        type_conversion = TYPE_CONVERSIONS.get()
-        if (previous_type, type_to_cast) in TYPE_CONVERSIONS:
-            if (result := type_conversion(term)) is not None:
-                self.set_last_result(result)
-            else:
-                raise CastingTypeError(node.position, term, previous_type, type_to_cast)
+        type_conversion = TYPE_CONVERSIONS.get((term.type, node.casted_type))
+        if type_conversion is not None:
+            self.set_last_result(Value(type_conversion(term.value), node.casted_type))
+        else:
+            raise CastingTypeError(node.position, term, term.type, node.casted_type)
 
     """
     LITERALS
     """
     def visit_str_literal(self, node: StrLiteral):
-        self.set_last_result(node.term)
+        self.set_last_result(Value(node.term, AstType.TYPE_STR))
 
     def visit_int_literal(self, node: IntLiteral):
-        self.set_last_result(node.term)
+        self.set_last_result(Value(node.term, AstType.TYPE_INT))
 
     def visit_float_literal(self, node: FloatLiteral):
-        self.set_last_result(node.term)
+        self.set_last_result(Value(node.term, AstType.TYPE_FLOAT))
 
     def visit_bool_literal(self, node: BoolLiteral):
-        self.set_last_result(node.term)
+        self.set_last_result(Value(node.term, AstType.TYPE_BOOL))

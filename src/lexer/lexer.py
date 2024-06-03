@@ -28,6 +28,9 @@ class Lexer:
             "for": TokenType.FOR,
             "in": TokenType.IN,
 
+            "true": TokenType.BOOL,
+            "false": TokenType.BOOL,
+
             "bool": TokenType.TYPE_BOOL,
             "int": TokenType.TYPE_INT,
             "float": TokenType.TYPE_FLOAT,
@@ -141,6 +144,7 @@ class Lexer:
                                           self._token_column)
             string_to_build.append(self.handle_escape_char())
             self._next_char()
+        self._next_char()
         string_to_build = "".join(string_to_build)
         return Token(TokenType.STR, value=string_to_build,
                      line=self._token_line, column=self._token_column)
@@ -205,28 +209,41 @@ class Lexer:
                          line=self._token_line, column=self._token_column)
 
     def build_number(self):
-        is_number = False
-        is_float = False
-        number_buffer = []
-        while self._character.isdecimal() or self._character == ".":
-            is_number = True
-            if self._character == ".":
-                is_float = True
-            number_buffer.append(self._character)
-            self._next_char()
-        number_buffer = "".join(number_buffer)
-
-        if is_number is False:
+        if not self._character.isdecimal():
             return None
-
-        if is_float:
-            number_buffer = float(number_buffer)
-            return Token(TokenType.FLOAT, value=number_buffer,
+        integer_part = self._build_integer_part()
+        if self._character == ".":
+            self._next_char()
+            fractional_part = self._build_fractional_part()
+            return Token(TokenType.FLOAT, value=integer_part + fractional_part,
                          line=self._token_line, column=self._token_column)
         else:
-            number_buffer = int(number_buffer)
-            return Token(TokenType.INT, value=number_buffer,
+            return Token(TokenType.INT, value=integer_part,
                          line=self._token_line, column=self._token_column)
+
+    def _build_integer_part(self):
+        number_to_build = 0
+        if self._character == "0":
+            self._next_char()
+            return 0
+        while self._character.isdecimal():
+            number_value = int(self._character)
+            # TODO: długość liczby sprawdzanie
+            number_to_build = 10 * number_to_build + number_value
+            self._next_char()
+        return number_to_build
+
+    def _build_fractional_part(self):
+        float_to_build = 0
+        float_depth = 0
+        while self._character.isdecimal():
+            float_value = int(self._character)
+            # TODO: długość liczby sprawdzanie
+            float_to_build = 10 * float_to_build + float_value
+            float_depth += 1
+            self._next_char()
+        float_to_build = float_to_build / (10 ** float_depth)
+        return float_to_build
 
     def build_comment(self):
 

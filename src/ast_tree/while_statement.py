@@ -1,5 +1,5 @@
 from src.visitor.visitor import Visitor
-from src.ast_tree.ast_type import AstType
+# from src.ast_tree.ast_type import AstType
 from src.ast_tree.node import Node
 
 
@@ -8,7 +8,7 @@ class WhileStatement(Node):
         self.position = position
         self.condition = condition
         self.execution_block = execution_block
-        self.type = AstType.WHILE_STATEMENT
+        # self.type = AstType.WHILE_STATEMENT
 
     def __repr__(self):
         return f"WhileStatement({self.position}, {self.condition},\

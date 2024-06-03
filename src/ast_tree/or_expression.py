@@ -1,5 +1,5 @@
 from src.visitor.visitor import Visitor
-from src.ast_tree.ast_type import AstType
+# from src.ast_tree.ast_type import AstType
 from src.ast_tree.node import Node
 
 
@@ -8,7 +8,7 @@ class OrExpression(Node):
         self.position = position
         self.left = left_term
         self.right = right_term
-        self.type = AstType.OR
+        # self.type = AstType.OR
 
     def __repr__(self):
         return f"OrExpression({self.left}, {self.right})"

@@ -1,5 +1,4 @@
 from src.visitor.visitor import Visitor
-# from src.visitor.printer_visitor import
 from src.ast_tree.node import Node
 
 

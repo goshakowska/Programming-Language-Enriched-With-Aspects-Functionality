@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from visitor.visitor import Visitor
+from src.visitor.visitor import Visitor
 
 
 class Node(ABC):
