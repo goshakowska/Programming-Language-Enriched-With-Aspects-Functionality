@@ -41,4 +41,4 @@ def main(arguments_to_parse):
 
 
 if __name__ == "__main__":
-    main(["main.py", "program.txt", "-p"])
+     main(["main.py", "program.txt", "-p"])
