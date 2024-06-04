@@ -60,7 +60,6 @@ from src.visitor.visitable import PrintFunction
 from src.visitor.environment import Environment, Value
 
 
-
 class Interpreter(Visitor):
 
     def __init__(self, program: Program, start_function_name: str = "", *args) -> None:
@@ -221,7 +220,8 @@ class Interpreter(Visitor):
 
     # ! nie działa
     def visit_identifier(self, node: Identifier):
-
+        # w variables przechowywać aspekty - nazwa aspektu: Value (value = ciało aspektu, type = aspektType) albo odpytywać czy to nie aspekt
+        # self._check_if_aspect(node.name)
         value = self.environment.get_variable(node.name)
         self.set_last_result(value)
 
@@ -245,7 +245,7 @@ class Interpreter(Visitor):
         if not (function := self.functions.get(node.name)):
             raise UndefinedFunctionError(node.position, node.name)
         if self._check_if_embedded_function(function):
-            function.accept(self)  #! Jakie rozwiązanie dla embedded functions?
+            function.accept(self)
         else:
             self.environment.enter_function_call(function.name, function.return_type)
             self.prepare_arguments_for_function_call(node.arguments)
@@ -264,14 +264,24 @@ class Interpreter(Visitor):
     # *działa
     def visit_assignment_statement(self, node: AssignmentStatement):
         # FIXME!
-        node.object_access.accept(self)
-        variable_value = self.get_last_result()  # casted term -
-        node.expression.accept(self)  # to powinno zwracać nazwę zmiennej, a zwraca None
-        variable_name = self.get_last_result()  # chyba w funnkcji if else zwraca źle
-        self.environment.add_variable(variable_name,
-                                      variable_value)
+        node.object_access.accept(self)  # a.b = c;  # to powinno mi ZAWSZE zwracać Value()
+        variable_value = self.get_last_result()
+        if variable_value is not None:  # ten warunek, gdy dostajemy variable value zawsze jest true
+            node.expression.accept(self)
+            new_value = self.get_last_result()
+            # node.object_access.set_value(new_value)
+            variable_value.set_value(new_value)
+            # self.environment.get_variable(variable_name).set_value(new_value)
 
-    def visit_object_access(self, node: ObjectAccess):  #! czy dobrze
+# logParam.enable = True;
+    def visit_object_access(self, node: Identifier | FunctionCall):  # function_call albo identifier
+
+        parent = None
+        if node.parent is not None:
+            node.parent.accept(self)
+            parent = self.get_last_result()
+        if (attribute := self.environment.get_variable(parent, node.name)) is None:
+            pass
         # jak to traktować przy interpretacji?
         # node.item.accept(self)
         # root_object = self.get_last_result()
@@ -282,14 +292,14 @@ class Interpreter(Visitor):
         #     pass
         # node.dot_item.accept(self)
         # if (attribute := self.get_last_result()) is not None:
-            ...
-        
-
-    def visit_indexed_item(self, node: IndexedItem):
         ...
-        # sprawdzić czy iterable
-        # sprawdzić długość i czy indeks jest w range
-        # last_result ma to, co jest pod danym indeksem
+
+
+    # def visit_indexed_item(self, node: IndexedItem):
+    #     ...
+    #     # sprawdzić czy iterable
+    #     # sprawdzić długość i czy indeks jest w range
+    #     # last_result ma to, co jest pod danym indeksem
 
     def visit_conditional_statement(self, node: ConditionalStatement):
 
@@ -335,7 +345,7 @@ class Interpreter(Visitor):
     def visit_variable_declaration(self, node: VariableDeclaration):
 
         value = Value(None, node.type)
-        self.set_last_result(node.name)
+        self.set_last_result(value)  # czy to dobrze?
         self.environment.add_variable(node.name, value)
 
     def visit_return_statement(self, node: ReturnStatement):
