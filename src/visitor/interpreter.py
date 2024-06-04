@@ -126,6 +126,7 @@ class Interpreter(Visitor):
     PROGRAM
     """
 
+    # * działa
     def visit_program(self, node: Program):
 
         if self._program_root:
@@ -184,7 +185,7 @@ class Interpreter(Visitor):
                                              provided_argument.type)
             self.environment.add_variable(input_parameter.name,
                                           provided_argument)
-            self.set_last_result(list(function.name, provided_arguments))
+        self.set_last_result([function.name, provided_arguments])  # ? czy dobrze zmieniłam?
 
     def visit_function_definition(self, node: FunctionDefinition):
 
@@ -197,7 +198,7 @@ class Interpreter(Visitor):
             if self.aspects.get(aspect_name).event == "start":
                 self.visit_aspect_definition(self.aspects.get(aspect_name))  # na strukturze
 
-        for statement in node.block:
+        for statement in node.block.statements:
             statement.accept(self)
 
         return_value = None  # zamieniłam wynik na result
@@ -218,9 +219,10 @@ class Interpreter(Visitor):
     STATEMENTS
     """
 
+    # ! nie działa
     def visit_identifier(self, node: Identifier):
 
-        value = self.environment.get_variable(node.name)  # TODO: czy tu jest dobrze?
+        value = self.environment.get_variable(node.name)
         self.set_last_result(value)
 
     def _in_functions_definitions(self, name: str):
@@ -243,7 +245,7 @@ class Interpreter(Visitor):
         if not (function := self.functions.get(node.name)):
             raise UndefinedFunctionError(node.position, node.name)
         if self._check_if_embedded_function(function):
-            function.accept(self)
+            function.accept(self)  #! Jakie rozwiązanie dla embedded functions?
         else:
             self.environment.enter_function_call(function.name, function.return_type)
             self.prepare_arguments_for_function_call(node.arguments)
@@ -259,12 +261,13 @@ class Interpreter(Visitor):
                 break
         self.environment.exit_block()
 
+    # *działa
     def visit_assignment_statement(self, node: AssignmentStatement):
         # FIXME!
         node.object_access.accept(self)
-        variable_value = self.get_last_result()
+        variable_value = self.get_last_result()  # casted term -
         node.expression.accept(self)  # to powinno zwracać nazwę zmiennej, a zwraca None
-        variable_name = self.get_last_result()
+        variable_name = self.get_last_result()  # chyba w funnkcji if else zwraca źle
         self.environment.add_variable(variable_name,
                                       variable_value)
 
@@ -294,13 +297,13 @@ class Interpreter(Visitor):
         condition_evaluation = self.get_last_result()
         # TODO: if, ze sprawdzeniem, czy jest to wartość boolowska bądź null
         if condition_evaluation:
-            self.environment.create_new_scope()
+            # self.environment.enter_block()
             node.if_block.accept(self)
-            self.environment.delete_current_scope()
+            # self.environment.exit_block()
             if node.else_block:
-                self.environment.create_new_scope()
+                # self.environment.enter_block()
                 node.else_block.accept(self)
-                self.environment.delete_current_scope()
+                # self.environment.exit_block()
 
     def visit_for_statement(self, node: ForStatement):
 
@@ -309,9 +312,9 @@ class Interpreter(Visitor):
         node.iterator.accept(self)
         if isinstance(iterable, list):
             for _ in iterable:  # czy tu potrzebny jest iterable?
-                self.environment.create_new_scope()
+                # self.environment.enter_block()
                 node.execution_block.accept(self)
-                self.environment.delete_current_scope()
+                # self.environment.exit_block()
                 if self._return_flag is True:
                     break
 
@@ -320,12 +323,15 @@ class Interpreter(Visitor):
         node.condition.accept(self)
         condition_evaluation = self.get_last_result()
         while condition_evaluation:
-            node.block.accept(self)
+            # self.environment.enter_block()
+            node.execution_block.accept(self)
+            # self.environment.exit_block()
             if self._return_flag is True:
                 break
             node.condition.accept(self)
             condition_evaluation = self.get_last_result()
 
+    # * działa
     def visit_variable_declaration(self, node: VariableDeclaration):
 
         value = Value(None, node.type)
@@ -343,97 +349,109 @@ class Interpreter(Visitor):
     """
     EXPRESSIONS
     """
+    # *działa
     def visit_or_expression(self, node: OrExpression):
         node.left_term.accept(self)
         left_term = self.get_last_result()
+        # left_value = self.environment.get_variable(left_term)
         node.right_term.accept(self)
         right_term = self.get_last_result()
-        if isinstance(left_term, bool) and isinstance(right_term, bool):
-            self.set_last_result(Value(left_term or right_term, AstType.TYPE_BOOL))
+        if isinstance(left_term.value, bool) and isinstance(right_term.value, bool):
+            self.set_last_result(Value(left_term.value or right_term.value, AstType.TYPE_BOOL))
         else:
-            raise OrExpressionError(node.position, left_term, right_term)
+            raise OrExpressionError(node.position, left_term.value, right_term.value)
 
+    # *działa
     def visit_and_expression(self, node: AndExpression):
         node.left_term.accept(self)
         left_term = self.get_last_result()
         node.right_term.accept(self)
         right_term = self.get_last_result()
-        if isinstance(left_term, bool) and isinstance(right_term, bool):
-            self.set_last_result(Value(left_term and right_term, AstType.TYPE_BOOL))
+        if isinstance(left_term.value, bool) and isinstance(right_term.value, bool):
+            self.set_last_result(Value(left_term.value and right_term.value, AstType.TYPE_BOOL))
         else:
-            raise AndExpressionError(node.position, left_term, right_term)
+            raise AndExpressionError(node.position, left_term.value, right_term.value)
 
+    # * działa
     def visit_equal_expression(self, node: EqualExpression):
         node.left_term.accept(self)
         left_term = self.get_last_result()
         node.right_term.accept(self)
         right_term = self.get_last_result()
-        self.set_last_result(Value(True, AstType.TYPE_BOOL)) if left_term == right_term else self.set_last_result(Value(False, AstType.TYPE_BOOL))
+        self.set_last_result(Value(True, AstType.TYPE_BOOL)) if left_term.value == right_term.value else self.set_last_result(Value(False, AstType.TYPE_BOOL))
 
+    # * działa
     def visit_not_equal_expression(self, node: NotEqualExpression):
         node.left_term.accept(self)
         left_term = self.get_last_result()
         node.right_term.accept(self)
         right_term = self.get_last_result()
-        self.set_last_result(Value(False, AstType.TYPE_BOOL)) if left_term == right_term else self.set_last_result(Value(True, AstType.TYPE_BOOL))
+        self.set_last_result(Value(False, AstType.TYPE_BOOL)) if left_term.value == right_term.value else self.set_last_result(Value(True, AstType.TYPE_BOOL))
 
+    # TODO: refactor expressions aby było bardziej wydajne
+    # * działa
     def visit_greater_than_expression(self, node: GreaterThanExpression):
         node.left_term.accept(self)
         left_term = self.get_last_result()
         node.right_term.accept(self)
         right_term = self.get_last_result()
-        if isinstance(left_term, (int, float)) and isinstance(right_term, (int, float)):
-            self.set_last_result(Value(True, AstType.TYPE_BOOL)) if left_term > right_term else self.set_last_result(Value(False, AstType.TYPE_BOOL))
+        if isinstance(left_term.value, (int, float)) and isinstance(right_term.value, (int, float)):
+            self.set_last_result(Value(True, AstType.TYPE_BOOL)) if left_term.value > right_term.value else self.set_last_result(Value(False, AstType.TYPE_BOOL))
         else:
             raise GreaterThanExpressionError(node.position,
-                                             left_term,
-                                             right_term)
+                                             left_term.value,
+                                             right_term.value)
 
+    # * działa
     def visit_greater_than_or_equal_expression(self, node: GreaterThanOrEqualExpression):
         node.left_term.accept(self)
         left_term = self.get_last_result()
         node.right_term.accept(self)
         right_term = self.get_last_result()
-        if isinstance(left_term, (int, float)) and isinstance(right_term, (int, float)):
-            self.set_last_result(Value(True, AstType.TYPE_BOOL)) if left_term >= right_term else self.set_last_result(Value(False, AstType.TYPE_BOOL))
+        if isinstance(left_term.value, (int, float)) and isinstance(right_term.value, (int, float)):
+            self.set_last_result(Value(True, AstType.TYPE_BOOL)) if left_term.value >= right_term.value else self.set_last_result(Value(False, AstType.TYPE_BOOL))
         else:
-            raise GreaterThanOrEqualExpressionError(node.position, left_term, right_term)
+            raise GreaterThanOrEqualExpressionError(node.position, left_term.value, right_term.value)
 
+    # * działa
     def visit_less_than_expression(self, node: LessThanExpression):
         node.left_term.accept(self)
         left_term = self.get_last_result()
         node.right_term.accept(self)
         right_term = self.get_last_result()
-        if isinstance(left_term, (int, float)) and isinstance(right_term, (int, float)):
-            self.set_last_result(Value(True, AstType.TYPE_BOOL)) if left_term < right_term else self.set_last_result(Value(False, AstType.TYPE_BOOL))
+        if isinstance(left_term.value, (int, float)) and isinstance(right_term.value, (int, float)):
+            self.set_last_result(Value(True, AstType.TYPE_BOOL)) if left_term.value < right_term.value else self.set_last_result(Value(False, AstType.TYPE_BOOL))
         else:
-            raise LessThanExpressionError(node.position, left_term, right_term)
+            raise LessThanExpressionError(node.position, left_term.value, right_term.value)
 
+    # * działa
     def visit_less_than_or_equal_expression(self, node: LessThanOrEqualExpression):
         node.left_term.accept(self)
         left_term = self.get_last_result()
         node.right_term.accept(self)
         right_term = self.get_last_result()
-        if isinstance(left_term, (int, float)) and isinstance(right_term, (int, float)):
-            self.set_last_result(Value(True, AstType.TYPE_BOOL)) if left_term <= right_term else self.set_last_result(Value(False, AstType.TYPE_BOOL))
+        if isinstance(left_term.value, (int, float)) and isinstance(right_term.value, (int, float)):
+            self.set_last_result(Value(True, AstType.TYPE_BOOL)) if left_term.value <= right_term.value else self.set_last_result(Value(False, AstType.TYPE_BOOL))
         else:
-            raise LessThanOrEqualExpressionError(node.position, left_term, right_term)
+            raise LessThanOrEqualExpressionError(node.position, left_term.value, right_term.value)
 
+    # * działa
     def visit_minus_expression(self, node: MinusExpression):
         node.left_term.accept(self)
         left_term = self.get_last_result()
         node.right_term.accept(self)
         right_term = self.get_last_result()
-        if isinstance(left_term, (int, float)) and isinstance(right_term, (int, float)):
-            result_value = left_term - right_term
-            if isinstance(left_term, int) and isinstance(right_term, int):
+        if isinstance(left_term.value, (int, float)) and isinstance(right_term.value, (int, float)):
+            result_value = left_term.value - right_term.value
+            if isinstance(left_term.value, int) and isinstance(right_term.value, int):
                 result_type = AstType.TYPE_INT
             else:
                 result_type = AstType.TYPE_FLOAT
             self.set_last_result(Value(result_value, result_type))
         else:
-            raise SubtractionExpressionError(node.position, left_term, right_term)
+            raise SubtractionExpressionError(node.position, left_term.value, right_term.value)
 
+    # * działa
     def visit_plus_expression(self, node: PlusExpression):  # TODO: dodanie możliwości agregowania stringów (bądź str + float/int)
         node.left_term.accept(self)  # Value
         left_term = self.get_last_result()
@@ -441,7 +459,7 @@ class Interpreter(Visitor):
         right_term = self.get_last_result()
         if isinstance(left_term.value, (int, float)) and isinstance(right_term.value, (int, float)):
             result_value = left_term.value + right_term.value
-            if isinstance(left_term.value, int) and isinstance(right_term.value, int):
+            if isinstance(left_term.value, int) and isinstance(right_term.value, int): # czy automatycznie zamieniać na int w takiej sytuacji 5.5 + 6.5 = 12 (czy 12.0)
                 result_type = AstType.TYPE_INT
             else:
                 result_type = AstType.TYPE_FLOAT
@@ -449,37 +467,39 @@ class Interpreter(Visitor):
         else:
             raise AdditionExpressionError(node.position, left_term.value, right_term.value)
 
+    # * działa
     def visit_division_expression(self, node: DivisionExpression):
         node.left_term.accept(self)
         left_term = self.get_last_result()
         node.right_term.accept(self)
         right_term = self.get_last_result()
-        if isinstance(left_term, (int, float)) and isinstance(right_term, (int, float)):
-            if right_term == 0:
+        if isinstance(left_term.value, (int, float)) and isinstance(right_term.value, (int, float)):
+            if right_term.value == 0:
                 raise DivisionByZeroError(node.position, left_term)
-            result_value = left_term / right_term
-            if isinstance(left_term, int) and isinstance(right_term, int):
+            result_value = left_term.value / right_term.value
+            if isinstance(left_term.value, int) and isinstance(right_term.value, int):
                 result_type = AstType.TYPE_INT
             else:
                 result_type = AstType.TYPE_FLOAT
             self.set_last_result(Value(result_value, result_type))
         else:
-            raise DivisionExpressionError(node.position, left_term, right_term)
+            raise DivisionExpressionError(node.position, left_term.value, right_term.value)
 
+    # * działa
     def visit_multiplication_expression(self, node: MultiplicationExpression):
         node.left_term.accept(self)
         left_term = self.get_last_result()
         node.right_term.accept(self)
         right_term = self.get_last_result()
-        if isinstance(left_term, (int, float)) and isinstance(right_term, (int, float)):
-            result_value = left_term * right_term
-            if isinstance(left_term, int) and isinstance(right_term, int):
+        if isinstance(left_term.value, (int, float)) and isinstance(right_term.value, (int, float)):
+            result_value = left_term.value * right_term.value
+            if isinstance(left_term.value, int) and isinstance(right_term.value, int):
                 result_type = AstType.TYPE_INT
             else:
                 result_type = AstType.TYPE_FLOAT
             self.set_last_result(Value(result_value, result_type))
         else:
-            raise MultiplicationExpressionError(node.position, left_term, right_term)
+            raise MultiplicationExpressionError(node.position, left_term.value, right_term.value)
 
     """
     OTHER
@@ -488,25 +508,33 @@ class Interpreter(Visitor):
     """
     TERMS
     """
-    def visit_unary_term(self, node: UnaryTerm):
-        term = node.term.accept(self)
-        negation_functions = {
-            int: lambda x: -x,
-            float: lambda x: -x,
-            bool: lambda x: not x
-        }
-        if negation_conversion := negation_functions.get(type(term)):
-            self.set_last_result(Value(negation_conversion(term)))  # ? jak otrzymać typ?
-        else:
-            raise NegatedTermError(node.position, term)
 
-    # float myFloat = myInt as float;
+    # * działa
+    def visit_unary_term(self, node: UnaryTerm):
+        node.term.accept(self)
+        value = self.get_last_result()
+        negation_functions = {
+            AstType.TYPE_INT: lambda x: -x,
+            AstType.TYPE_FLOAT: lambda x: -x,
+            AstType.TYPE_BOOL: lambda x: not x
+        }
+        if negation_conversion := negation_functions.get(value.type):
+            negated_value = negation_conversion(value.value)
+            # value.set_value(Value(negated_value, value.type))
+            self.set_last_result(Value(negated_value, value.type))
+        else:
+            raise NegatedTermError(node.position, value)
+
+    # * działa
     def visit_casted_term(self, node: CastedTerm):
         TYPE_CONVERSIONS = {
                 (AstType.TYPE_INT, AstType.TYPE_FLOAT): lambda x: float(x),
                 (AstType.TYPE_FLOAT, AstType.TYPE_INT): lambda x: int(x) if x.is_integer() else None,
                 (AstType.TYPE_INT, AstType.TYPE_STR): lambda x: str(x),
+                (AstType.TYPE_STR, AstType.TYPE_INT): lambda x: int(x) if x.is_integer() else None,
+                (AstType.TYPE_STR, AstType.TYPE_FLOAT): lambda x: float(x) if x.replace('.', '', 1).isdigit() and x.count('.') <= 1 else None,
                 (AstType.TYPE_FLOAT, AstType.TYPE_STR): lambda x: str(x),
+                (AstType.TYPE_BOOL, AstType.TYPE_STR): lambda x: str(x),
                 (AstType.TYPE_STR, AstType.TYPE_BOOL): lambda x: bool({"true": 1, "false": 0}.get(x)),
                 (AstType.TYPE_INT, AstType.TYPE_BOOL): lambda x: bool(x) if x in {0, 1} else None
             }
@@ -521,14 +549,18 @@ class Interpreter(Visitor):
     """
     LITERALS
     """
+    # * działa
     def visit_str_literal(self, node: StrLiteral):
         self.set_last_result(Value(node.term, AstType.TYPE_STR))
 
+    # * działa
     def visit_int_literal(self, node: IntLiteral):
         self.set_last_result(Value(node.term, AstType.TYPE_INT))
 
+    # * działa
     def visit_float_literal(self, node: FloatLiteral):
         self.set_last_result(Value(node.term, AstType.TYPE_FLOAT))
 
+    # * działa
     def visit_bool_literal(self, node: BoolLiteral):
         self.set_last_result(Value(node.term, AstType.TYPE_BOOL))
