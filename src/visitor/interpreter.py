@@ -78,7 +78,7 @@ class Interpreter(Visitor):
         self._last_result = None
         self._return_flag = False
 
-        self.EMBEDDED_FUNCTIONS = {"print": PrintFunction}
+        self.EMBEDDED_FUNCTIONS = {"print": PrintFunction()}
         self.add_embedded_functions_to_program(self.EMBEDDED_FUNCTIONS)
 
         self.environment = Environment()
@@ -92,19 +92,28 @@ class Interpreter(Visitor):
         self._last_result = result
 
     def add_embedded_functions_to_program(self, embedded_functions: dict):
-        program_function_definitions = self.functions
         for name, function in embedded_functions.items():
-            if name not in program_function_definitions.keys():
-                program_function_definitions[name] = function
+            if name not in self.functions.keys():
+                self.functions[name] = function
             else:
                 raise EmbeddedFunctionOverrideError(name)
 
     def visit_print_function(self, node: PrintFunction):
-        node.arguments.accept(self)
-        if isinstance(self.get_last_result(), str):
-            print(self.get_last_result())
-        else:
-            print(str(self.get_last_result()))  # ? czy tak można?
+        print_conversions = {
+            AstType.TYPE_INT: lambda x: str(x),
+            AstType.TYPE_FLOAT: lambda x: str(x),
+            AstType.TYPE_BOOL: lambda x: "true" if x else "false",
+            AstType.TYPE_STR: lambda x: x
+        }
+
+        content_to_print = self.get_last_result()
+        if content_to_print is not None:
+            node.set_arguments(content_to_print)
+            string_to_print = "".join(
+                print_conversions[argument.type](argument.value) if argument.type in print_conversions else str(argument.value)
+                for argument in node.arguments
+            )  # upewnić się potem czy obiekty klasy przechodzą to
+            print(string_to_print)  # ? czy tak można?
 
     def _enable_aspect(self, aspect_name: str):  # jakie rozwiązanie lepsze - pole enabled w Aspect, czy zbiór enabled w interpreterze?
         if aspect_name not in self.enabled_aspects:
@@ -133,7 +142,7 @@ class Interpreter(Visitor):
                 raise FunctionNotFoundError(self._program_root)
             if self.input_parameters:
                 self.set_last_result(self.input_parameters)
-            self._program_root.accept(self)
+            self.functions.get(self._program_root).accept(self)  # sięgam po obiekt funkcji
 
         for statement in node.statements:
             statement.accept(self)
@@ -149,20 +158,6 @@ class Interpreter(Visitor):
             if isinstance(statement, ReturnStatement):
                 raise ReturnInAspectDefinitionError(statement.position, node.name)
             statement.accept(self)
-
-    # def visit_active_on_start_aspect_definition(self, node: AspectDefinition):
-    #     if not self._check_if_function_is_target(node.target, self._last_result[0]):
-    #         return None
-    #     function_name, function_parameters = self._last_result
-    #     for statement in node.block:
-    #         statement.accept(self)
-
-    # def visit_active_on_end_aspect_definition(self, node: AspectDefinition):
-    #     if not self._check_if_function_is_target(node.target, self._last_result[0]):
-    #         return None
-    #     function_name, return_value = self._last_result
-    #     for statement in node.block:
-    #         statement.accept(self)
 
     # def visit_active_on_count_aspect_definition(self, node: AspectDefinition):
     #     pass
@@ -192,6 +187,7 @@ class Interpreter(Visitor):
         self._check_input_parameters(node, self.get_last_result())
         # self.set_last_result(list(node.name, arguments))  # * check_input_parameters ustawia last_result na nazwę funkcji i parametry
 
+        self.environment.enter_function_call(node.name, node.return_type)
         # last_result będzie nadpisywany przy kolejnych ewaluacjach aspektów - gdzie przechowywać nazwę i parametry wywołania
         for aspect_name in self.enabled_aspects:
             if self.aspects.get(aspect_name).event == "start":
@@ -199,40 +195,42 @@ class Interpreter(Visitor):
 
         for statement in node.block.statements:
             statement.accept(self)
+            if self._return_flag is True:
+                break
 
         return_value = None  # zamieniłam wynik na result
         if self._return_flag is True:
             return_value = self.get_last_result()
             self._return_flag = False
-        if not isinstance(return_value, node.return_type):
+        if not return_value.type == node.return_type:
             raise IncorrectReturnTypeError(node.position, node.name, node.return_type, return_value)
 
-        self.set_last_result(node.name, return_value)
+        self.set_last_result([node.name, return_value])
 
         for aspect_name in self.enabled_aspects:
             if self.aspects.get(aspect_name).event == "end":
                 self.visit_active_on_end_aspect_definition(self.aspects.get(aspect_name))
+        self.set_last_result(return_value)
+        self.environment.exit_function_call()
 
 
     """
     STATEMENTS
     """
 
-    # ! nie działa
-    def visit_identifier(self, node: Identifier):
+    # ? działa
+    def visit_identifier(self, node: Identifier) -> None:
         # w variables przechowywać aspekty - nazwa aspektu: Value (value = ciało aspektu, type = aspektType) albo odpytywać czy to nie aspekt
         # self._check_if_aspect(node.name)
         value = self.environment.get_variable(node.name)
         self.set_last_result(value)
 
-    def _in_functions_definitions(self, name: str):
+    def _in_functions_definitions(self, name: str) -> bool:
 
         return name in self.functions
 
-    def _check_if_embedded_function(self, function):
-        return function in self.EMBEDDED_FUNCTIONS.values()
-
-    def prepare_arguments_for_function_call(self, arguments):
+    # * działa
+    def prepare_arguments_for_function_call(self, arguments) -> list[Value]:
 
         input_parameters = []
         for argument in arguments:
@@ -244,13 +242,8 @@ class Interpreter(Visitor):
 
         if not (function := self.functions.get(node.name)):
             raise UndefinedFunctionError(node.position, node.name)
-        if self._check_if_embedded_function(function):
-            function.accept(self)
-        else:
-            self.environment.enter_function_call(function.name, function.return_type)
-            self.prepare_arguments_for_function_call(node.arguments)
-            function.accept(self)
-            self.environment.exit_function_call()
+        self.prepare_arguments_for_function_call(node.arguments)
+        function.accept(self)
 
     def visit_statements_block(self, node: StatementsBlock):
 
@@ -261,7 +254,7 @@ class Interpreter(Visitor):
                 break
         self.environment.exit_block()
 
-    # *działa
+    # ? działa
     def visit_assignment_statement(self, node: AssignmentStatement):
         # FIXME!
         node.object_access.accept(self)  # a.b = c;  # to powinno mi ZAWSZE zwracać Value()
@@ -306,7 +299,7 @@ class Interpreter(Visitor):
         node.expression.accept(self)
         condition_evaluation = self.get_last_result()
         # TODO: if, ze sprawdzeniem, czy jest to wartość boolowska bądź null
-        if condition_evaluation:
+        if condition_evaluation.value:
             # self.environment.enter_block()
             node.if_block.accept(self)
             # self.environment.exit_block()
@@ -332,7 +325,7 @@ class Interpreter(Visitor):
 
         node.condition.accept(self)
         condition_evaluation = self.get_last_result()
-        while condition_evaluation:
+        while condition_evaluation.value:
             # self.environment.enter_block()
             node.execution_block.accept(self)
             # self.environment.exit_block()
@@ -340,6 +333,8 @@ class Interpreter(Visitor):
                 break
             node.condition.accept(self)
             condition_evaluation = self.get_last_result()
+
+        
 
     # * działa
     def visit_variable_declaration(self, node: VariableDeclaration):
@@ -352,7 +347,10 @@ class Interpreter(Visitor):
 
         if not self.environment.check_if_in_call_context():
             raise ReturnOutsideFunctionCallError(node.position)
-        node.expression.accept(self)
+        if node.expression is None:
+            self.set_last_result(Value(None, AstType.NULL))
+        else:
+            node.expression.accept(self)
         self._return_flag = True
 
 
