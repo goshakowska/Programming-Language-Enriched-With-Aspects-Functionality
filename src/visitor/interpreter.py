@@ -19,6 +19,7 @@ from src.visitor.interpreter_errors import DivisionByZeroError
 from src.visitor.interpreter_errors import IncorrectReturnTypeError
 from src.visitor.interpreter_errors import UndefinedFunctionError
 from src.visitor.interpreter_errors import ReturnInAspectDefinitionError
+from src.visitor.interpreter_errors import ObjectAttributeError
 
 from src.visitor.visitor import Visitor
 from src.ast_tree.and_expression import AndExpression
@@ -58,6 +59,8 @@ from src.ast_tree.ast_type import AstType
 
 from src.visitor.visitable import PrintFunction
 from src.visitor.environment import Environment, Value
+
+ITERATION_LIMIT = 100
 
 
 class Interpreter(Visitor):
@@ -154,6 +157,7 @@ class Interpreter(Visitor):
     def visit_aspect_definition(self, node: AspectDefinition):
         if not self._check_if_function_is_target(node.target, self._last_result[0]):
             return None
+        
         for statement in node.block:
             if isinstance(statement, ReturnStatement):
                 raise ReturnInAspectDefinitionError(statement.position, node.name)
@@ -198,7 +202,7 @@ class Interpreter(Visitor):
             if self._return_flag is True:
                 break
 
-        return_value = None  # zamieniłam wynik na result
+        return_value = None
         if self._return_flag is True:
             return_value = self.get_last_result()
             self._return_flag = False
@@ -267,14 +271,19 @@ class Interpreter(Visitor):
             # self.environment.get_variable(variable_name).set_value(new_value)
 
 # logParam.enable = True;
-    def visit_object_access(self, node: Identifier | FunctionCall):  # function_call albo identifier
+    def visit_object_access(self, node: Identifier | FunctionCall):
 
         parent = None
         if node.parent is not None:
             node.parent.accept(self)
             parent = self.get_last_result()
-        if (attribute := self.environment.get_variable(parent, node.name)) is None:
-            pass
+        if hasattr(parent, node.name):
+            attribute = getattr(parent, node.name)
+            self.set_last_result(attribute)
+        else:
+            raise ObjectAttributeError(node.position, parent, node.name)
+
+
         # jak to traktować przy interpretacji?
         # node.item.accept(self)
         # root_object = self.get_last_result()
@@ -325,16 +334,17 @@ class Interpreter(Visitor):
 
         node.condition.accept(self)
         condition_evaluation = self.get_last_result()
+        iteration_counter = 0
         while condition_evaluation.value:
-            # self.environment.enter_block()
+            if iteration_counter == ITERATION_LIMIT:
+                raise RuntimeError(node.position, ITERATION_LIMIT)
             node.execution_block.accept(self)
-            # self.environment.exit_block()
             if self._return_flag is True:
                 break
             node.condition.accept(self)
             condition_evaluation = self.get_last_result()
+            iteration_counter += 1
 
-        
 
     # * działa
     def visit_variable_declaration(self, node: VariableDeclaration):
