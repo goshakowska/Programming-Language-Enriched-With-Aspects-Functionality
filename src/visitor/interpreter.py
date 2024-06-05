@@ -20,6 +20,7 @@ from src.visitor.interpreter_errors import IncorrectReturnTypeError
 from src.visitor.interpreter_errors import UndefinedFunctionError
 from src.visitor.interpreter_errors import ReturnInAspectDefinitionError
 from src.visitor.interpreter_errors import ObjectAttributeError
+from src.visitor.interpreter_errors import NotInitializedVariableAccessError
 
 from src.visitor.visitor import Visitor
 from src.ast_tree.and_expression import AndExpression
@@ -59,6 +60,8 @@ from src.ast_tree.ast_type import AstType
 
 from src.visitor.visitable import PrintFunction
 from src.visitor.environment import Environment, Value
+
+from src.visitor.environment import  AspectValue, FunctionValue, Args, Param
 
 ITERATION_LIMIT = 100
 
@@ -128,7 +131,7 @@ class Interpreter(Visitor):
             self.aspects.get(aspect_name).enabled = False
             self.enabled_aspects.remove(aspect_name)
 
-    def _check_if_function_is_target(self, aspect: AspectDefinition,
+    def _check_if_is_target(self, aspect: AspectDefinition,
                                      function_name: str):
         return function_name in aspect.target
 
@@ -154,17 +157,51 @@ class Interpreter(Visitor):
     DEFINITIONS
     """
 
+    def update_targeted_function(self, instance: FunctionValue, **kwargs):
+        instance._set_updating(True)
+        instance._increment_call_count()
+        for attribute, new_value in kwargs.items():
+            setattr(instance, attribute, new_value)
+        instance._set_updating(False)
+
     def visit_aspect_definition(self, node: AspectDefinition):
-        if not self._check_if_function_is_target(node.target, self._last_result[0]):
+        if not self._check_if_is_target(node.target, self._last_result[0]):
             return None
-        
+        (
+            function_name,
+            input_parameters,
+            provided_arguments,
+            return_value,
+            return_type
+        ) = self.get_last_result()  # czy te nawiasy nie popsują?
+
+        arguments = Args(
+            Param(param_name, provided_value, provided_value.type)
+            for param_name, provided_value in zip(input_parameters,
+                                                  provided_arguments)
+        ) if input_parameters else None
+
+        targeted_function = FunctionValue(
+            name=function_name,
+            args=arguments,
+            return_value=return_value,
+            return_type=return_type
+        )
+
+        if (aspect_value := self.environment.check_for_global_aspect(node.name)) is not None:
+            if (targeted_function := aspect_value.targets.get(function_name)) is not None:
+                targeted_function.accept_updater(self,
+                                                 args=arguments,
+                                                 return_type=return_value)
+        else:
+            self.environment.add_global_variable(
+                AspectValue(node.name, {targeted_function}))
+
         for statement in node.block:
             if isinstance(statement, ReturnStatement):
-                raise ReturnInAspectDefinitionError(statement.position, node.name)
+                raise ReturnInAspectDefinitionError(statement.position,
+                                                    node.name)
             statement.accept(self)
-
-    # def visit_active_on_count_aspect_definition(self, node: AspectDefinition):
-    #     pass
 
     def _check_input_parameters(self,
                                 function: FunctionDefinition,
@@ -183,19 +220,25 @@ class Interpreter(Visitor):
                                              provided_argument.type)
             self.environment.add_variable(input_parameter.name,
                                           provided_argument)
-        self.set_last_result([function.name, provided_arguments])  # ? czy dobrze zmieniłam?
+        self.set_last_result(provided_arguments)  # ? czy dobrze zmieniłam?
 
     def visit_function_definition(self, node: FunctionDefinition):
 
-        # * w self.last_result mam teraz parametry wywołania funkcji
         self._check_input_parameters(node, self.get_last_result())
-        # self.set_last_result(list(node.name, arguments))  # * check_input_parameters ustawia last_result na nazwę funkcji i parametry
+        provided_arguments = self.get_last_result()
 
         self.environment.enter_function_call(node.name, node.return_type)
-        # last_result będzie nadpisywany przy kolejnych ewaluacjach aspektów - gdzie przechowywać nazwę i parametry wywołania
+
         for aspect_name in self.enabled_aspects:
-            if self.aspects.get(aspect_name).event == "start":
-                self.visit_aspect_definition(self.aspects.get(aspect_name))  # na strukturze
+            if self.aspects.get(aspect_name).event == AstType.ASPECT_ON_START \
+                 or \
+                 self.aspects.get(aspect_name).event == AstType.ASPECT_ON_CALL:
+
+                self.set_last_result([node.name, node.params,
+                                      provided_arguments, None,
+                                      node.return_type])
+
+                self.visit_aspect_definition(self.aspects.get(aspect_name))
 
         for statement in node.block.statements:
             statement.accept(self)
@@ -207,12 +250,13 @@ class Interpreter(Visitor):
             return_value = self.get_last_result()
             self._return_flag = False
         if not return_value.type == node.return_type:
-            raise IncorrectReturnTypeError(node.position, node.name, node.return_type, return_value)
+            raise IncorrectReturnTypeError(node.position, node.name,
+                                           node.return_type, return_value)
 
         self.set_last_result([node.name, return_value])
 
         for aspect_name in self.enabled_aspects:
-            if self.aspects.get(aspect_name).event == "end":
+            if self.aspects.get(aspect_name).event == AstType.ASPECT_ON_START:
                 self.visit_active_on_end_aspect_definition(self.aspects.get(aspect_name))
         self.set_last_result(return_value)
         self.environment.exit_function_call()
@@ -230,7 +274,6 @@ class Interpreter(Visitor):
         self.set_last_result(value)
 
     def _in_functions_definitions(self, name: str) -> bool:
-
         return name in self.functions
 
     # * działa
@@ -275,27 +318,24 @@ class Interpreter(Visitor):
 
         parent = None
         if node.parent is not None:
-            node.parent.accept(self)
+            try:
+                parent = self.environment.get_variable(node.parent)
+            except NotInitializedVariableAccessError:
+                NotInitializedVariableAccessError(node.position, node.parent, node.name)
+
             parent = self.get_last_result()
-        if hasattr(parent, node.name):
-            attribute = getattr(parent, node.name)
-            self.set_last_result(attribute)
+            if hasattr(parent, node.name):
+                attribute = getattr(parent, node.name)
+                self.set_last_result(attribute)
+            else:
+                raise ObjectAttributeError(node.position, parent, node.name)
         else:
-            raise ObjectAttributeError(node.position, parent, node.name)
-
-
-        # jak to traktować przy interpretacji?
-        # node.item.accept(self)
-        # root_object = self.get_last_result()
-        # if self.environment.get_variable(root_object) is None:
-        #     raise UndefinedVariableError(node.position, root_object)
-
-        # if node.dot_item:
-        #     pass
-        # node.dot_item.accept(self)
-        # if (attribute := self.get_last_result()) is not None:
-        ...
-
+            if isinstance(node, Identifier):
+                self.visit_identifier(node)
+            elif isinstance(node, FunctionCall):
+                self.visit_function_call(node)
+            # else:
+            #     raise TypeError("Unsupported node type")
 
     # def visit_indexed_item(self, node: IndexedItem):
     #     ...
@@ -345,7 +385,6 @@ class Interpreter(Visitor):
             condition_evaluation = self.get_last_result()
             iteration_counter += 1
 
-
     # * działa
     def visit_variable_declaration(self, node: VariableDeclaration):
 
@@ -362,7 +401,6 @@ class Interpreter(Visitor):
         else:
             node.expression.accept(self)
         self._return_flag = True
-
 
     """
     EXPRESSIONS
