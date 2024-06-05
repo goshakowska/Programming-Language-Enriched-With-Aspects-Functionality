@@ -19,11 +19,11 @@ Celem projektu jest stworzenie języka ogólnego przeznaczenia wzbogaconego o as
 
 ### Podstawowe typy danych
 
-Język będzie składał się z dobrze znanych podstawowych typów danych - `int`, `float`, `str`, `bool`. Oprócz nich na potrzeby języka zdefiniowane zostaną nowe wbudowane typy danych: `aspect`, wraz z jego parametrem (`enabled`) oraz kontenerowe typy danych wbudowanych `param`, `args`  ze zdefiniowanymi strukturami oraz własnymi parametrami. Warto zaznaczyć, że `param`, `args` są wewnętrznymi strukturami, do których mamy dostęp w sposób nie bezpośredni, lecz przez:
-- parametr `func.args` - zwraca strukturę typu `args`, która jest tablicą przechowującą obiekty typu param dla danej funkcji. Obiekty typu `param` stanowią reprezentację parametrów wejściowych, jakie zostały podane przy wywołaniu funkcji.
-- iterację po elementach struktury `args`  (np. w pętli `for`), bądź indeksowanie - będzie wówczas dostępny wewnętrzny element struktury `args` - obiekt typu `param`
+Język będzie składał się z dobrze znanych podstawowych typów danych - `int`, `float`, `str`, `bool`. Oprócz nich na potrzeby języka zdefiniowane zostaną nowe wbudowane typy danych: `aspect`, wraz z jego parametrem (`enabled`) oraz kontenerowe typy danych wbudowanych `param`, `arguments`  ze zdefiniowanymi strukturami oraz własnymi parametrami. Warto zaznaczyć, że `param`, `arguments` są wewnętrznymi strukturami, do których mamy dostęp w sposób nie bezpośredni, lecz przez:
+- parametr `func.arguments` - zwraca strukturę typu `arguments`, która jest tablicą przechowującą obiekty typu param dla danej funkcji. Obiekty typu `param` stanowią reprezentację parametrów wejściowych, jakie zostały podane przy wywołaniu funkcji.
+- iterację po elementach struktury `arguments`  (np. w pętli `for`), bądź indeksowanie - będzie wówczas dostępny wewnętrzny element struktury `arguments` - obiekt typu `param`
 
-W sposób szczegółowy nowe typy danych (`args`, `param`) zostaną opisane poniżej, w sekcji  _Typy stworzone pod kątem przeznaczenia języka_
+W sposób szczegółowy nowe typy danych (`arguments`, `param`) zostaną opisane poniżej, w sekcji  _Typy stworzone pod kątem przeznaczenia języka_
 
 ### Konwesja typów
 
@@ -74,7 +74,7 @@ boolean - `bool`
 
 Oraz typy stworzone pod kątem przeznaczenia języka:
 
-arguments - `args`
+arguments - `arguments`
 - jest to tablica, składająca się ze zbioru argumentów wywołania funkcji typu param, podobnie jak Struct w C, lecz każda zmienna - wewnętrzny element kolekcji - musi być typu param
 
 parameter - `param`
@@ -84,10 +84,10 @@ parameter - `param`
 
 # Niestandardowe typy danych
 param myParam;
-args myInputTable;
+arguments myInputTable;
 
 
-# SZABLON budowy tablicy typu args 
+# SZABLON budowy tablicy typu arguments 
 myInputTable = [
     param: myParam,   # podstawowe typy danych
            …   # nazwa zmiennej
@@ -105,21 +105,21 @@ int funcParam = 1; # deklaracja zmiennej typu int
 
 exampleFunc(funcParam);  # zmienna ta później użyta jest w wywołaniu funkcji jako
                         # parametr wejściowy
- # tworzy się wewnętrzna struktura typu args : [funcParam]
+ # tworzy się wewnętrzna struktura typu arguments : [funcParam]
 
 # zawierająca jeden element - jedną zmienną param, która posiada taką trójkę
 # informacji: [int, funcParam, 1]
 
 /* 
 
-UWAGA - nie można explicite stworzyć (zadeklarować oraz zainicjować) zmiennych typu args oraz param - powyższy przykład ilustruje, jakie obiekty tworzą się podczas przekazania zmiennych wywołania funkcji oraz w jaki sposób zorganizowana jest ich struktura.
+UWAGA - nie można explicite stworzyć (zadeklarować oraz zainicjować) zmiennych typu arguments oraz param - powyższy przykład ilustruje, jakie obiekty tworzą się podczas przekazania zmiennych wywołania funkcji oraz w jaki sposób zorganizowana jest ich struktura.
 */
 ```
 
-Zarówno typ `args` jak i typ `param` posiadają wbudowane atrybuty, do których możemy się odwołać, przypisać nowe wartości.
+Zarówno typ `arguments` jak i typ `param` posiadają wbudowane atrybuty, do których możemy się odwołać, przypisać nowe wartości.
 
-Dla `args`:
-- atrybut `count` - zwracający wartość typu int, mówiącą o liczbie obiektów typu param w tablicy args (o liczbie parametrów wejściowych wywoływanej funkcji)
+Dla `arguments`:
+- atrybut `count` - zwracający wartość typu int, mówiącą o liczbie obiektów typu param w tablicy arguments (o liczbie parametrów wejściowych wywoływanej funkcji)
 
 
 Przykład:
@@ -134,19 +134,19 @@ exampleFunc(example1, example2, example3);  # wywołanie funkcji z parametrami
                                             # wejściowymi (która została gdzieś
                                             # wcześniej zdefiniowana)
 
-/* wewnątrz funkcji stworzy się jedna struktura args exampleInputTable,
+/* wewnątrz funkcji stworzy się jedna struktura arguments exampleInputTable,
 przechowująca parametry: param exampleParam1 - parametr, który zawiera informacje 
 o zmiennej example1 (o jej typie (int), nazwie (example1) i wartości (1)), param exampleParam2,
 param exampleParam3 (analogicznie jak w exampleParam1). Warto zaznaczyć, że są to struktury wewnętrzne,
 których jawnie nie możemy zainicjować w kodzie. Tak, jak poniżej zostało to pokazane,
-do struktury args można dostać się tylko przez atrybut funkcji o tejże samej nazwie. */
+do struktury arguments można dostać się tylko przez atrybut funkcji o tejże samej nazwie. */
 
-str param_number = exampleFunc.args.count as str;
+str param_number = exampleFunc.arguments.count as str;
 print(param_number);
 
 >>>3
 
-# bo args exampleInputTable = [exampleParam1, exampleParam2, exampleParam3]
+# bo arguments exampleInputTable = [exampleParam1, exampleParam2, exampleParam3]
 ```
 
 Dla `param`:
@@ -157,9 +157,9 @@ Dla `param`:
 Przykład (kontynuacja wcześniejszego kodu):
 
 ```
-str exampleParamType =  exampleFunc.args[0].type;
-str exampleParamName =  exampleFunc.args[0].name; 
-str exampleParamValue =  exampleFunc.args[0].value as str; # dochodzi do
+str exampleParamType =  exampleFunc.arguments[0].type;
+str exampleParamName =  exampleFunc.arguments[0].name; 
+str exampleParamValue =  exampleFunc.arguments[0].value as str; # dochodzi do
                                                             # konwersji typu na str
 print(exampleParamType);
 >>> int
@@ -272,7 +272,7 @@ func exampleFunction(type variableName): returnType  # jeśli funkcja nic nie zw
         }
 
 ```
-Funkcja posiada dwa wbudowane atrybuty: `retval` oraz `args`. `retval` odpowiada wartości zwracanej przez funkcję, zaś `args` - tablicy parametrów wejściowych wywołania funkcji.
+Funkcja posiada dwa wbudowane atrybuty: `retval` oraz `arguments`. `retval` odpowiada wartości zwracanej przez funkcję, zaś `arguments` - tablicy parametrów wejściowych wywołania funkcji.
 
 Deklaracja aspektu:
 
@@ -316,8 +316,8 @@ aspect logParams: on start like "write"
     str funcName = func.name;
     str secondPrompt = ", has provided the input parameters:\n";
     str inputParamsPrompt = "";
-    int count = func.args.count;
-    for param in func.args;
+    int count = func.arguments.count;
+    for param in func.arguments;
     {
         count = count - 1;
         str namePrompt = "name: " + param.name;
