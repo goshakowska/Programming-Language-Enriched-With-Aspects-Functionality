@@ -16,7 +16,9 @@ class FunctionCall(Node):
 
     def __eq__(self, other):
         return (isinstance(other, FunctionCall) and
-                other.name == self.name and other.arguments == self.arguments and other.parent == self.parent)  #
+                other.name == self.name
+                and other.arguments == self.arguments
+                and other.parent == self.parent)
 
     def accept(self, visitor: Visitor):
         visitor.visit_function_call(self)

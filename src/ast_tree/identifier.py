@@ -15,7 +15,8 @@ class Identifier(Node):
 
     def __eq__(self, other):
         return (isinstance(other, Identifier) and
-                other.name == self.name and other.parent == self.parent)
+                other.name == self.name and
+                other.parent == self.parent)
 
     def accept(self, visitor: Visitor):
         visitor.visit_identifier(self)
