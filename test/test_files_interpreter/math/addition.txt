@@ -1,0 +1,5 @@
+func testAddition() : null {
+    print(2 + 3);
+    return;
+}
+testAddition();

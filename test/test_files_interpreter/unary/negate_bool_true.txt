@@ -1,0 +1,6 @@
+func testNegateBool() : null {
+    bool myBool = true;
+    print(-myBool);
+    return;
+}
+testNegateBool();

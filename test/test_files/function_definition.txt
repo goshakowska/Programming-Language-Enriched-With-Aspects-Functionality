@@ -1,6 +1,6 @@
 int myInt = 6;
 func myFunc(int intParam) : int
 {
-    int outputInt = 6*2;
+    int outputInt = intParam * 2;
     return outputInt;
 }

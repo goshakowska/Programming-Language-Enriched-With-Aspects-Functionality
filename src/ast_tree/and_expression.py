@@ -1,6 +1,4 @@
 from src.visitor.visitor import Visitor
-from src.visitor.checker_visitor import CheckerVisitor
-# from src.ast_tree.ast_type import AstType
 from src.ast_tree.node import Node
 
 
@@ -20,7 +18,4 @@ class AndExpression(Node):
                 other.right_term == self.right_term)
 
     def accept(self, visitor: Visitor):
-        visitor.visit_and_expression(self)
-
-    def accept_checker(self, visitor: CheckerVisitor):
         visitor.visit_and_expression(self)

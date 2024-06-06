@@ -1,0 +1,7 @@
+func testInvalidCastStrToFloat() : null {
+    str myStr = "abc123";
+    float myFloat = myStr as float;
+    print(myFloat);
+    return;
+}
+testInvalidCastStrToFloat();

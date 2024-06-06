@@ -19,4 +19,4 @@ class Identifier(Node):
                 other.parent == self.parent)
 
     def accept(self, visitor: Visitor):
-        visitor.visit_identifier(self)
+        visitor.visit_object_access(self)

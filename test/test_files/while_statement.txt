@@ -1,0 +1,13 @@
+func countToFive(int counter) : null
+{
+    while (stopCondition != "stop") {
+    if (x != 5){
+    x = x + 1;
+    }
+    else {
+    stopCondition == "stop";
+    }
+
+}
+return;
+}

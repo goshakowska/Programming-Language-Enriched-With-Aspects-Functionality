@@ -9,8 +9,7 @@ class VariableDeclaration(Node):  # position, ast_type, name
         self.type = type
 
     def __repr__(self):
-        return f"VariableDeclaration({self.position}, {self.name},\
-              {self.type})"
+        return f"VariableDeclaration({self.position}, {self.name})"
 
     def __eq__(self, other):
         return (isinstance(other, VariableDeclaration) and

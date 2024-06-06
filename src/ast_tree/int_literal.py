@@ -10,7 +10,7 @@ class IntLiteral(Node):
         # self.type = AstType.INT
 
     def __repr__(self):
-        return f"Literal({self.position}, {self.term}, {self.type})"
+        return f"Literal({self.position}, {self.term})"
 
     def __eq__(self, other):
         return (isinstance(other, IntLiteral) and

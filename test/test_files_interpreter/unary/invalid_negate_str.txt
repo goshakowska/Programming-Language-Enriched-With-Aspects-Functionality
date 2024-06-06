@@ -1,0 +1,6 @@
+func testNegateInvalidType() : null {
+    str myStr = "to negate";
+    print(-myStr);
+    return;
+}
+testNegateInvalidType();

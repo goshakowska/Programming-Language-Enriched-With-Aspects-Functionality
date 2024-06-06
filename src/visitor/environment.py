@@ -1,7 +1,11 @@
 from src.ast_tree.ast_type import AstType
 from src.visitor.interpreter_errors import TypeAssignmentError
 from src.visitor.interpreter_errors import VariableNameConflictError
-from typing import Any
+from src.visitor.interpreter_errors import ReadOnlyAttributeError
+from src.visitor.interpreter_errors import NotInitializedError
+from typing import Any, TYPE_CHECKING
+if TYPE_CHECKING:
+    from src.visitor.interpreter import Interpreter
 
 
 class Value:
@@ -19,24 +23,80 @@ class Value:
         return self.value
 
 
+class ReadOnlyDescriptor:
+    def __init__(self, attribute_name):
+        self._attribute_name = attribute_name
+
+    def __get__(self, instance, owner):
+        if instance is None:
+            return self
+        value = instance.__dict__.get(self._attribute_name)
+        if value is None:
+            raise NotInitializedError(self._attribute_name)
+        return value
+
+    def __set__(self, instance, value):
+        if not instance.__dict__.get(f'_{self._attribute_name}_initialized', False) or instance._is_updating():
+            instance.__dict__[self._attribute_name] = value
+            instance.__dict__[f'_{self._attribute_name}_initialized'] = True
+        else:
+            raise ReadOnlyAttributeError(self._attribute_name)
+
+
+class AspectValue:
+    def __init__(self, function_name, function_target) -> None:
+        # self.name = name
+        self.type = AstType.TYPE_ASPECT
+        self.targets = {function_name: function_target}
+        self.enable = True
+
+    @property
+    def enable(self):
+        return self._enable
+
+    @enable.setter
+    def enable(self, value: bool):
+        if isinstance(value, bool):
+            self._enable = value
+        else:
+            raise ValueError("Enable must be a boolean value")
+
+    @property
+    def disable(self):
+        self._enable = False
+
+
 class FunctionValue:
-    def __init__(self,
-                 value: "Args",
-                 type: AstType = AstType.TYPE_FUNCTION,
-                 return_value: AstType = AstType.NULL) -> None:
 
-        self.value = value
-        self.type = type
-        self.call_count = 1
-        self.return_value = return_value
+    name = ReadOnlyDescriptor('name')
+    args = ReadOnlyDescriptor('args')
+    returnValue = ReadOnlyDescriptor('return_value')
+    returnType = ReadOnlyDescriptor('return_type')
+    callCount = ReadOnlyDescriptor('call_count')
+    type = ReadOnlyDescriptor('type')
 
-    @property
-    def args(self) -> "Args":
-        return self.value
+    def __init__(self, name, args, return_value=None, return_type=AstType.NULL):
+        self._set_updating(True)  # Start updating
+        self.name = name
+        self.args = args
+        self.returnValue = return_value
+        self.returnType = return_type
+        self.callCount = Value(1, AstType.INT)
+        self.type = AstType.TYPE_FUNCTION
+        self._set_updating(False)  # Stop updating
 
-    @property
-    def return_value(self) -> AstType:
-        return self._return_value
+    def _is_updating(self):
+        return self.__updating
+
+    def _set_updating(self, value):
+        self.__updating = value
+
+    def accept_updater(self, updater: "Interpreter", **kwargs):
+        updater.update_targeted_function(self, **kwargs)
+
+    def increment_call_count(self) -> None:
+        new_call_count = self.callCount.get_value() + 1
+        self.callCount = Value(new_call_count, AstType.INT)
 
 
 class Args:
@@ -48,7 +108,7 @@ class Args:
 
     @property
     def count(self) -> int:
-        return len(self.value)
+        return Value(len(self.value), AstType.INT)
 
 
 class Param:
@@ -61,27 +121,15 @@ class Param:
         self.value = value
         self.type = type
 
-    @property
-    def name(self) -> str:
-        return self._name
-
-    @property
-    def value(self) -> Any:
-        return self._value
-
-    @property
-    def type(self) -> AstType:
-        return self._type
-
 
 class Scope:
     def __init__(self) -> None:
 
         self.variables = {}
 
-    def find_and_set_old_variable(self, name: str,  value: Value):  # todo, aby sprawdzać czy zmienny różnych typów o tej samej nazwie
+    def find_and_set_old_variable(self, name: str,  value: Value):
         if name in self.variables.keys():  # two
-            if self.variables[name].type == value.type:  # dwa razy sprawdzam to 
+            if self.variables[name].type == value.type:
                 self.variables[name].set_value(value)
                 return True
             else:
@@ -93,12 +141,15 @@ class Scope:
 
     def add_variable(self,
                      name: str,
-                     value: Value) -> None:
+                     value: Value | FunctionValue) -> None:
         if not self.find_and_set_old_variable(name, value):
             self.variables[name] = value
 
+    def add_function_variable(self, name: str, value: FunctionValue) -> None:
+        self.variables.update({name: value})
+
     def get_variable(self,
-                     variable_name: str) -> Value:
+                     variable_name: str) -> Value | FunctionValue:
         if (value := self.variables.get(variable_name)):
             return value
         return None
@@ -123,15 +174,12 @@ class CallContext:
     def add_variable(self,
                      name: str,
                      value: Value) -> None:
-        # check_if_variable_exists
         self.scopes[-1].add_variable(name, value)
 
     def add_scope(self) -> None:
-
         self.scopes.append(Scope())
 
     def delete_scope(self) -> None:
-
         self.scopes.pop()
 
 
@@ -153,7 +201,8 @@ class Environment:
     def exit_function_call(self) -> None:
         self.nesting_level -= 1
         self.call_contexts.pop()
-        self.current_scope = self.call_contexts[-1].scopes[-1] if len(self.call_contexts) != 0 else self.global_scope
+        self.current_scope = self.call_contexts[-1].scopes[-1] \
+            if len(self.call_contexts) != 0 else self.global_scope
 
     def check_if_in_call_context(self) -> bool:
         return len(self.call_contexts) != 0
@@ -165,28 +214,25 @@ class Environment:
         self.call_contexts[-1].delete_scope()
 
     def get_variable(self, variable_name: str) -> Value:
-        return self.current_scope.get_variable(variable_name) or self.global_scope.get_variable(variable_name)
+        return self.current_scope.get_variable(variable_name) or\
+              self.global_scope.get_variable(variable_name)
 
     def add_variable(self, name: str, value: Value) -> None:
         self.current_scope.add_variable(name, value)
 
-    def add_global_variable(self, name: str, value: Value) -> None:
+    def check_for_global_aspect(self, name: str) -> bool:
+        if name in self.global_scope.variables.keys()\
+         and self.global_scope.variables[name].type == AstType.TYPE_ASPECT:
+            return self.global_scope.variables.get(name)
+        else:
+            return None
+
+    def add_global_variable(self, name: str, value: Any) -> None:
         self.global_scope.add_variable(name, value)
-    # def create_parameters_scope(self, input_parameters: list, provided_arguments: list) -> None:
-    #     initial_scope = Scope(self.current_scope)
-    #     # błąd jeśli nie jest taka sama liczba parametrow i argumentów
-    #     for parameter, argument in zip(input_parameters, provided_arguments):
-    #         initial_scope.variables[parameter.name] = argument
 
-    #     return initial_scope
+    def add_function_variable(self, name: str, value: FunctionValue) -> None:
+        self.current_scope.add_function_variable(name, value)
 
-# class GlobalContext(Scope):
-#     def __init__(self):
-#         super().__init__()
-#         self.variables = {}
-
-#     def find_and_set_old_variable(self, name: str,  value: Value):
-#         if name in self.variables.keys():
-#             self.variables[name] = value
-#             return True
-#         return False
+    def enter_aspect_block(self, targeted_function: FunctionValue) -> None:
+        self.call_contexts[-1].add_scope()
+        self.add_function_variable("function", targeted_function)

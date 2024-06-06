@@ -136,7 +136,7 @@ class Lexer:
         self._next_char()
         while self._character != '"':
             if self._character == "":
-                raise TerminateLexerError("wrong syntax: terminated string",
+                raise TerminateLexerError("wrong syntax: unterminated string",
                                           self._token_line, self._token_column)
             if len(string_to_build) == self.max_string_length:
                 raise TerminateLexerError("exceeded max string length",
@@ -191,7 +191,7 @@ class Lexer:
     def build_keywords_or_identifier(self):
 
         buffer = []
-        while self._character.isalpha():
+        while self._character.isalpha() or self._character == "_":
             if len(buffer) == self.max_string_length:
                 TerminateLexerError("buffer overflow: \
                                     exceeded number of chars",
@@ -202,8 +202,12 @@ class Lexer:
         if ret_buffer == "":
             return None
         elif token_type := self.key_words.get(ret_buffer):
-            return Token(token_type, line=self._token_line,
-                         column=self._token_column)
+            if token_type == TokenType.BOOL:
+                return Token(TokenType.BOOL, value=bool({"true": 1, "false": 0}.get(ret_buffer)),
+                             line=self._token_line, column=self._token_column)
+            else:
+                return Token(token_type, line=self._token_line,
+                             column=self._token_column)
         else:
             return Token(TokenType.IDENTIFIER, value=ret_buffer,
                          line=self._token_line, column=self._token_column)
@@ -228,7 +232,6 @@ class Lexer:
             return 0
         while self._character.isdecimal():
             number_value = int(self._character)
-            # TODO: długość liczby sprawdzanie
             number_to_build = 10 * number_to_build + number_value
             self._next_char()
         return number_to_build
@@ -238,7 +241,6 @@ class Lexer:
         float_depth = 0
         while self._character.isdecimal():
             float_value = int(self._character)
-            # TODO: długość liczby sprawdzanie
             float_to_build = 10 * float_to_build + float_value
             float_depth += 1
             self._next_char()

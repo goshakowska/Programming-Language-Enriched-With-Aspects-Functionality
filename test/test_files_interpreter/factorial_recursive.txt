@@ -1,0 +1,12 @@
+func factorialRecursive(int n) : int
+{
+    int multiplier = n;
+    if (multiplier == 0 || multiplier == 1)
+    {
+        return 1;
+    }
+    return multiplier * factorialRecursive(multiplier - 1);
+}
+
+int myResult = factorialRecursive(5);
+print(myResult);

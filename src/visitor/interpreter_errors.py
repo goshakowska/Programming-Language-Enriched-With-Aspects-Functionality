@@ -236,7 +236,7 @@ class VariableNameConflictError(Exception):
         return f"ERR! Cannot assign variable value {self.value} to variable {self.name}. Variable of a name {self.name} already exists with value {self.existing_variable_value}."
 
 
-class ReturnInAspectDefinitionError(Exception): 
+class ReturnInAspectDefinitionError(Exception):
 
     def __init__(self, statement_position, aspect_name) -> None:
         self.position = statement_position
@@ -244,3 +244,64 @@ class ReturnInAspectDefinitionError(Exception):
 
     def __str__(self):
         return f"ERR! [{self.position}]: Return statements are not supported in Aspect type. Aspect: {self.name}."
+
+
+class RuntimeError(Exception):
+
+    def __init__(self, position, limit) -> None:
+        self.position = position
+        self.limit = limit
+
+    def __str__(self):
+        return f"ERR! [{self.position}]: Runtime limit of {self.limit} exceeded in iterating loop."
+
+
+class ObjectAttributeError(Exception):
+
+    def __init__(self, position, object_name, name) -> None:
+        self.position = position
+        self.object_name = object_name
+        self.name = name
+
+    def __str__(self):
+        return f"ERR! [{self.position}]: Object {self.object_name} has no attribute {self.name}."
+
+
+class ReadOnlyAttributeError(Exception):
+
+    def __init__(self, attribute_name) -> None:
+        self._attribute_name = attribute_name
+
+    def __str__(self):
+        return f"ERR! Cannot reassign value to {self._attribute_name}."
+
+
+class NotInitializedError(Exception):
+
+    def __init__(self, attribute_name) -> None:
+        self._attribute_name = attribute_name
+
+    def __str__(self):
+        return f"ERR! {self._attribute_name} not initialized."
+
+
+class NotInitializedVariableAccessError(Exception):
+
+    def __init__(self, position, variable_name, access_name) -> None:
+        self.position = position
+        self.variable_name = variable_name
+        self.access_name = access_name
+
+    def __str__(self):
+        return f"ERR! [{self.position}]: {self.access_name} cannot be evaluated on the variable {self.variable_name} that is not accessible."
+
+
+class UnsupportedObjectAccessTypeError(Exception):
+
+    def __init__(self, position, object_name, access_name) -> None:
+        self.position = position
+        self.object_name = object_name
+        self.access_name = access_name
+
+    def __str__(self):
+        return f"ERR! [{self.position}]: {self.access_name} cannot be evaluated on the object {self.object_name}."

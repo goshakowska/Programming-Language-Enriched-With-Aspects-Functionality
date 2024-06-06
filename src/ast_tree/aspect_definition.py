@@ -1,5 +1,4 @@
 from src.visitor.visitor import Visitor
-# from src.visitor.checker_visitor import CheckerVisitor
 from src.ast_tree.ast_type import AstType
 from src.ast_tree.node import Node
 
@@ -14,7 +13,7 @@ class AspectDefinition(Node):
         self.regular_expression = regular_expression
         self.block = block
         self.type = AstType.TYPE_ASPECT
-        self.enabled = True  # czy potrzebne
+        self.enabled = True
 
     def __repr__(self):
         return f"AspectDefinition({self.position}, {self.name}, {self.target},\
@@ -29,8 +28,3 @@ class AspectDefinition(Node):
 
     def __hash__(self) -> int:
         return hash(str(self))
-
-    # def accept_checker(self, visitor: CheckerVisitor):
-    #     visitor.visit_aspect_definition(self)
-
-# aspect target, aspect trigger, aspect

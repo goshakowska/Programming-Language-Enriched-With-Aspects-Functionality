@@ -1,0 +1,6 @@
+func testNegateInt() : null {
+    int myInt = 10;
+    print(-myInt);
+    return;
+}
+testNegateInt();

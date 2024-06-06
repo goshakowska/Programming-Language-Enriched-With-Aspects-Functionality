@@ -1,0 +1,5 @@
+func testDivisionByZero() : null {
+    print(10 / 0);
+    return;
+}
+testDivisionByZero();

@@ -1,0 +1,5 @@
+func testDivision() : null {
+    print(10 / 2);
+    return;
+}
+testDivision();

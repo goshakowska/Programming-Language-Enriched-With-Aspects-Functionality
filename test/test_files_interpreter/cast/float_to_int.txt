@@ -1,0 +1,7 @@
+func testCastFloatToInt() : null {
+    float myFloat = 5.0;
+    int myInt = myFloat as int;
+    print(myInt);
+    return;
+}
+testCastFloatToInt();

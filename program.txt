@@ -1,0 +1,97 @@
+func printParams( str type, str name, int value) : null {
+    str paramType = type;
+    str paramName = name;
+    str paramValue = value;
+    str textToShowFirst =  "Param of type: " + paramType;
+    str textToShowSecond = " name: " + paramName;
+    str textToShowThird = " value: "  + paramValue;
+    str textToShowForth = " was provided to function.";
+    str finalText = textToShowFirst + textToShowSecond + textToShowThird + textToShowForth;
+    return finalText;
+
+}
+
+aspect countFunctionCalls: on func call like count {  
+    print("Function of a name: ", function.name, " was called: ", function.callCount, " times.");
+}
+
+aspect countFunctionReturnValue: on func end like count {
+    print("Function of a name: ", function.name, " has provided result: ", function.returnValue, " of a type: ", function.returnType);
+}
+
+func countToFive(int counter) : null
+{
+    int functionIterationCounter = 0;
+    str stopCondition = "don't stop!";
+    while (stopCondition != "stop" ) 
+    {
+    functionIterationCounter = functionIterationCounter + 1;
+    if (counter != 5){
+    counter = counter + 1;
+    }
+    else {
+    stopCondition = "stop";
+    }
+    }
+    print(functionIterationCounter);
+    return;
+
+}
+
+func countExponential(int numberSoonToBeInPower) : int
+{
+    numberSoonToBeInPower = numberSoonToBeInPower * numberSoonToBeInPower;
+    return numberSoonToBeInPower;
+}
+
+func countMultiplyIterating(int myNumber, int iterationCounter) : int
+{
+    while (iterationCounter != 0)
+    {
+        myNumber = myNumber * iterationCounter;
+        iterationCounter = iterationCounter - 1;
+        print(myNumber);
+    }
+    return myNumber;
+}
+
+
+func factorial(int n) : int
+{
+    int number = 1;
+    int numberOfTimes = n;
+    while (numberOfTimes >= 1)
+    {
+        number = number * numberOfTimes;
+        numberOfTimes = numberOfTimes - 1;
+    }
+    return number;
+}
+
+func countFactorialRecursive(int n) : int
+{
+    int multiplier = n;
+    print(multiplier, ": wartosc multiplier");
+    if (multiplier == 0 || multiplier == 1)
+    {
+        return 1;
+    }
+    return multiplier * factorial(multiplier - 1);
+}
+
+int myNum = 5;
+
+
+int result = countExponential(myNum);
+
+int myNumber = countMultiplyIterating(4, 3);
+print(myNumber, " czy to dobry wynik?");
+print(result, " udalo sie, juz drugi raz!");
+
+int parameterToFactor = 5;
+int factorialResult = factorial(parameterToFactor);
+print("Silnia od liczby: ", parameterToFactor, " to: ", factorialResult);
+int factorialRecursiveResult = countFactorialRecursive(parameterToFactor);
+print("Silnia od liczby: ", parameterToFactor, " to: ", factorialRecursiveResult);
+
+

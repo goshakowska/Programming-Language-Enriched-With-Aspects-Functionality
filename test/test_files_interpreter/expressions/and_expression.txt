@@ -1,0 +1,7 @@
+func testAnd() : null {
+    bool a = true;
+    bool b = false;
+    print(a && b);
+    return;
+}
+testAnd();
