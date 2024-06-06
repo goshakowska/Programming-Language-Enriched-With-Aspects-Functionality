@@ -624,3 +624,17 @@ ERR! [3: 10]: expected 'int' got 'bool' in return
 ### Opis sposobu testowania
 
 Cały projekt - jego poprawność, spójność itd., będzie testowana głównie za pomocą testów jednostkowych (gdzie w izolowany sposób będzie sprawdzana poprawność implementacji komponentów projektów, takich jak np. analizator leksykalny, składniowy, semantyczny) oraz testów integracyjnych (gdzie sprawdzana będzie poprawność komunikacji pomiędzy dwoma komponentami na ich “miejscach styku”). Wszystko to ma służyć zapewnieniu sprawnego przepływu pomiędzy odpowiednimi fazami kompilacji.
+
+### Aktualizacja dokumentacji
+
+Zaimplementowana została założona funkcjonalność - m.in. typy wbudowane aspektowość.
+W ramach interpretacji danego pliku wejściowego w terminalu należy wpisać python3 main.py _fileName_ -p (wówczas w terminalu zostanie wyprintowane drzewo AST). Interpreter analizuje nie tylko wyrażenia znajdujące się wewnątrz wywołań funkcji, ale też te globalne.
+
+Podczas implementacji zmieniła się składnia języka, dla przykładu:
+Deklaracja aspektu: 
+```
+aspect countFunctionCalls: on func call like count {  # początek deklaracji ma inną kolejność słów kluczowych
+    print("Function of a name: ", function.name, " was called: ", function.callCount, " times.");
+}
+```
+Zmienna `func` została nazwana `function` - aby nie doszło do konfliktu nazw (z typem `func`).
