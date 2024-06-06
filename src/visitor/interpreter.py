@@ -133,7 +133,7 @@ class Interpreter(Visitor):
 
     def _check_if_is_target(self, aspect: AspectDefinition,
                                      function_name: str):
-        return function_name in aspect.target
+        return aspect.regular_expression.name in function_name
 
 
     """
@@ -165,7 +165,7 @@ class Interpreter(Visitor):
         instance._set_updating(False)
 
     def visit_aspect_definition(self, node: AspectDefinition):
-        if not self._check_if_is_target(node.target, self._last_result[0]):
+        if not self._check_if_is_target(node, self._last_result[0]):
             return None
         (
             function_name,
@@ -193,15 +193,18 @@ class Interpreter(Visitor):
                 targeted_function.accept_updater(self,
                                                  args=arguments,
                                                  return_type=return_value)
+            else:
+                aspect_value.targets.update({function_name: targeted_function})
         else:
-            self.environment.add_global_variable(
-                AspectValue(node.name, {targeted_function}))
+            self.environment.add_global_variable(node.name,
+                AspectValue(targeted_function))
 
-        for statement in node.block:
-            if isinstance(statement, ReturnStatement):
-                raise ReturnInAspectDefinitionError(statement.position,
-                                                    node.name)
-            statement.accept(self)
+        self.environment.enter_aspect_block(targeted_function)
+        node.block.accept(self)
+        if self._return_flag is True:
+            raise ReturnInAspectDefinitionError(node.block.position,
+                                                node.name)
+        self.environment.exit_block()
 
     def _check_input_parameters(self,
                                 function: FunctionDefinition,
@@ -319,11 +322,13 @@ class Interpreter(Visitor):
         parent = None
         if node.parent is not None:
             try:
-                parent = self.environment.get_variable(node.parent)
+                parent = self.environment.get_variable(node.parent.name)
             except NotInitializedVariableAccessError:
-                NotInitializedVariableAccessError(node.position, node.parent, node.name)
+                NotInitializedVariableAccessError(node.position,
+                                                  node.parent,
+                                                  node.name)
 
-            parent = self.get_last_result()
+            # parent = self.get_last_result()  # czy tu dobrze?
             if hasattr(parent, node.name):
                 attribute = getattr(parent, node.name)
                 self.set_last_result(attribute)
