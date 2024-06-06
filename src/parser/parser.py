@@ -1,10 +1,10 @@
 from src.lexer.lexer import Lexer
 from src.token.token_type import TokenType
 from src.token.token import Token
-from src.ast_tree.function_definiton import FunctionDefinition
+from src.ast_tree.function_definition import FunctionDefinition
 from src.ast_tree.aspect_definition import AspectDefinition
 from src.ast_tree.identifier import Identifier
-from src.ast_tree.selection_statement import SelectionStatement
+from src.ast_tree.conditional_statement import ConditionalStatement
 from src.ast_tree.function_call import FunctionCall
 from src.ast_tree.variable_declaration import VariableDeclaration
 from src.ast_tree.for_statement import ForStatement
@@ -12,8 +12,8 @@ from src.ast_tree.while_statement import WhileStatement
 from src.ast_tree.return_statement import ReturnStatement
 from src.ast_tree.assignment_statement import AssignmentStatement
 from src.ast_tree.statements_block import StatementsBlock
-from src.ast_tree.object_access import ObjectAccess
-from src.ast_tree.indexed_item import IndexedItem
+# from src.ast_tree.object_access import ObjectAccess
+# from src.ast_tree.indexed_item import IndexedItem
 from src.ast_tree.unary_term import UnaryTerm
 from src.ast_tree.casted_term import CastedTerm
 from src.ast_tree.less_than_expression import LessThanExpression
@@ -39,7 +39,7 @@ from src.ast_tree.float_literal import FloatLiteral
 
 from src.parser.parser_errors import UnexpectedTokenTypeError
 from src.parser.parser_errors import FunctionRedefinitionError
-from src.parser.parser_errors import StatementRedefinitionError
+# from src.parser.parser_errors import StatementRedefinitionError
 from src.parser.parser_errors import AspectRedefinitionError
 from src.parser.parser_errors import MissingOpeningParenthesisError
 from src.parser.parser_errors import MissingClosingParenthesisError
@@ -82,12 +82,20 @@ ADDITIVE_OPERATORS = {TokenType.PLUS: PlusExpression,
 MULTIPLICATIVE_OPERATORS = {TokenType.MULTIPLICATION: MultiplicationExpression,
                             TokenType.DIVISION: DivisionExpression}
 
-VARIABLE_TYPES = {TokenType.BOOL_TYPE: AstType.BOOL_TYPE,
-                  TokenType.FLOAT_TYPE: AstType.FLOAT_TYPE,
-                  TokenType.INT_TYPE: AstType.INT_TYPE,
-                  TokenType.STR_TYPE: AstType.STR_TYPE}
+VARIABLE_TYPES = {TokenType.TYPE_BOOL: AstType.TYPE_BOOL,
+                  TokenType.TYPE_FLOAT: AstType.TYPE_FLOAT,
+                  TokenType.TYPE_INT: AstType.TYPE_INT,
+                  TokenType.TYPE_STR: AstType.TYPE_STR}
 
-ASPECT_TARGETS = {TokenType.FUNCTION_TYPE: AstType.FUNCTION}
+RETURN_TYPES = {
+    TokenType.TYPE_BOOL: AstType.TYPE_BOOL,
+    TokenType.TYPE_FLOAT: AstType.TYPE_FLOAT,
+    TokenType.TYPE_INT: AstType.TYPE_INT,
+    TokenType.TYPE_STR: AstType.TYPE_STR,
+    TokenType.NULL: AstType.NULL
+}
+
+ASPECT_TARGETS = {TokenType.TYPE_FUNCTION: AstType.TYPE_FUNCTION}
 
 ASPECT_EVENTS = {TokenType.ASPECT_ON_START: AstType.ASPECT_ON_START,
                  TokenType.ASPECT_ON_END: AstType.ASPECT_ON_END,
@@ -121,7 +129,6 @@ class Parser:
         if self.current_token.get_type() not in token_types:
             raise exception
         token = self.current_token
-        print("Mój token" + str(self.current_token))  # usun
         self.consume_token()
         return token
 
@@ -142,48 +149,49 @@ class Parser:
     # program::= { declaration_statement |
     #              function_declaration  |
     #              aspect_declaration}
-    def parse_program(self, name):
-        functions = []
-        function_names = set()
-        aspects = []
-        aspect_names = set()
-        declarations = []
-        declaration_names = set()
+    def parse_program(self, name=None):
+        functions = {}
+        aspects = {}
+        # declarations = []
+        # declaration_names = set()
+        statements = []
 
         def raise_(provided_error):
             raise provided_error
 
         while \
-                self._parse_declaration_statement(
-                lambda declaration_to_add, declaration_name:
-                declarations.append(declaration_to_add)
-                if declaration_name not in declaration_names
-                else raise_(StatementRedefinitionError(
-                    self.current_token.get_position(),
-                    declaration_to_add.name))
+                self._parse_statement(
+                lambda statement_to_add:
+                statements.append(statement_to_add)
+                # if declaration_name not in declaration_names
+                # else raise_(StatementRedefinitionError(
+                #     self.current_token.get_position(),
+                #     declaration_to_add.name))
                     ) \
                 or self._parse_function_declaration(
-                lambda function_to_add: functions.append(function_to_add)
-                if function_to_add.name not in function_names
+                lambda function_to_add:
+                functions.setdefault(function_to_add.name, function_to_add)
+                if function_to_add.name not in functions
                 else raise_(FunctionRedefinitionError(
                     self.current_token.get_position(),
-                    function_to_add.name))
+                function_to_add.name))
                     ) \
                 or self._parse_aspect_declaration(
-                lambda aspect_to_add: aspects.append(aspect_to_add)
-                if aspect_to_add.name not in aspect_names
+                lambda aspect_to_add:
+                aspects.setdefault(aspect_to_add.name, aspect_to_add)
+                if aspect_to_add.name not in aspects
                 else raise_(AspectRedefinitionError(
-                    self.current_token.get_position(),
-                    aspect_to_add.name))
+                self.current_token.get_position(),
+                aspect_to_add.name))
                     ):
             continue
         if self.current_token.get_type() != TokenType.ETX:
             raise SyntaxError
         else:
-            return Program(name, functions, aspects, declarations)
+            return Program(name, functions, aspects, statements)
 
     # declaration_statement ::= declaration, [ "=", expression ]
-    def _parse_declaration_statement(self, function_handler=None):
+    def _parse_declaration_statement(self, statement_handler=None):
         if declaration := self._parse_declaration():
             if self.current_token.type == TokenType.ASSIGN:
                 position = self.current_token.get_position()
@@ -192,17 +200,17 @@ class Parser:
                 self._must_be_and_consume(TokenType.SEMICOLON,
                                           MissingSemicolonError(
                                             self.current_token.get_position()))
-                if function_handler:
-                    declaration = AssignmentStatement(position,
-                                                      declaration,
-                                                      expression)
-                    declaration_name = declaration.expression.name
-                    function_handler(declaration, declaration_name)
+                if statement_handler:
+                    declaration = AssignmentStatement(position,  # !UWAGA - tu zmieniłam kolejność
+                                                      expression,
+                                                      declaration)
+                    # declaration_name = declaration.expression.name
+                    statement_handler(declaration)
                     return True
-                return AssignmentStatement(position, declaration, expression)
-            if function_handler:
-                declaration_name = declaration.name
-                function_handler(declaration, declaration_name)
+                return AssignmentStatement(position, expression, declaration)  # !UWAGA - tu zmieniłam
+            if statement_handler:
+                # declaration_name = declaration.name
+                statement_handler(declaration)
                 return True
             return declaration
         return None
@@ -210,7 +218,7 @@ class Parser:
     # function_declaration ::= "func", identifier, "(", [ parameters ], ")",
     # ":", return_type, block;
     def _parse_function_declaration(self, function_handler):
-        if self.current_token.type != TokenType.FUNCTION_TYPE:
+        if self.current_token.type != TokenType.TYPE_FUNCTION:
             return None
         position = self.current_token.get_position()
         self.consume_token()
@@ -237,7 +245,8 @@ class Parser:
             raise NoReturnTypeError(self.current_token.get_position(), name)
         block = self._parse_block()
         if not block:
-            raise NoExecutionBlockError(self.current_token.get_position(), name)
+            raise NoExecutionBlockError(self.current_token.get_position(),
+                                        name)
         function_handler(
             FunctionDefinition(position, name, params, block, return_type))
         return True
@@ -245,7 +254,7 @@ class Parser:
     # aspect_declaration ::= "aspect", identifier, ":", aspect_trigger, block;
     # regular_expression ::= string;
     def _parse_aspect_declaration(self, aspect_handler) -> AspectDefinition:
-        if self.current_token.type != TokenType.ASPECT_TYPE:
+        if self.current_token.type != TokenType.TYPE_ASPECT:
             return None
         position = self.current_token.get_position()
         self.consume_token()
@@ -263,9 +272,11 @@ class Parser:
         target, event, regular_expression = self._parse_aspect_trigger(name)
         block = self._parse_block()
         if not block:
-            raise NoExecutionBlockError(self.current_token.get_position(), name)
+            raise NoExecutionBlockError(self.current_token.get_position(),
+                                        name)
         aspect_handler(
-            AspectDefinition(position, name, target, event, regular_expression, block)
+            AspectDefinition(position, name, target, event,
+                             regular_expression, block)
             )
         return True
 
@@ -297,7 +308,7 @@ class Parser:
                                       aspect_name,
                                       TokenType.LIKE
                                   ))
-        if (regular_expression := self._parse_identifier()) is None:
+        if (regular_expression := self._parse_identifier_or_call(None)) is None:  # !UWAGA ZMIENIAM!
             raise InvalidAspectPatternError(
                 self.current_token.get_position(),
                 aspect_name)
@@ -312,7 +323,7 @@ class Parser:
         return aspect_target
 
     # aspect_event ::= "start" | "end" | "call";
-    def _parse_aspect_event(self):
+    def _parse_aspect_event(self):  # ? czy tutaj jest dobrze
         if (token := self._should_be_in_set_and_consume(ASPECT_EVENTS)) \
              is None:
             return None
@@ -322,17 +333,16 @@ class Parser:
     # declaration ::= type, identifier;
     def _parse_declaration(self):
         if self.current_token.get_type() not in VARIABLE_TYPES.keys():
-            print(self.current_token.get_type())  # usun
             return None
         position = self.current_token.get_position()
         token = \
-            self._must_be_in_set_and_consume(VARIABLE_TYPES.keys(),
+            self._must_be_in_set_and_consume(VARIABLE_TYPES.keys(), # ? czy tutaj jest dobrze
                                              UnexpectedTokenTypeError(
-                                                self.current_token.get_position(),
+                                                self.current_token
+                                                    .get_position(),
                                                 VARIABLE_TYPES.keys(),
                                                 self.current_token.get_type()
                                                 ))
-        print("Cześć" + str(token))
         token_type = VARIABLE_TYPES.get(token.get_type())
         token = self._must_be_and_consume(TokenType.IDENTIFIER,
                                           UnexpectedTokenTypeError
@@ -344,7 +354,8 @@ class Parser:
 
     # type ::= "int" | "float" | "string" | "bool";
     def _parse_type(self):
-        if (token := self._should_be_in_set_and_consume(VARIABLE_TYPES.keys())) is None:
+        if (token := self._should_be_in_set_and_consume(VARIABLE_TYPES.keys() # ? czy tutaj jest dobrze
+                                                        )) is None:
             return None
         token_type = token.get_type()
         return token_type
@@ -405,8 +416,8 @@ class Parser:
         left_additive_factor = self._parse_additive_term()
         if left_additive_factor is None:
             return None
-        if relation_constructor := RELATION_OPERATORS.get(
-             self.current_token.get_type()):
+        if (relation_constructor := RELATION_OPERATORS.get(
+             self.current_token.get_type())):
             position = self.current_token.get_position()
             self.consume_token()
             right_additive_factor = self._parse_additive_term()
@@ -486,9 +497,11 @@ class Parser:
 
     # return_type ::= type | "null";
     def _parse_return_type(self):  # typ z AST
-        if self.current_token.get_type() not in VARIABLE_TYPES:
+        if self.current_token.get_type() not in VARIABLE_TYPES.keys():
             if self.current_token.get_type() == TokenType.NULL:
-                return None
+                self.consume_token()
+                return_type = AstType.NULL
+                return return_type
             else:
                 raise UnexpectedTokenTypeError(
                     self.current_token.get_position(),
@@ -517,18 +530,18 @@ class Parser:
 
     # statement ::= selection_statement | declaration_statement
     # | assignment_or_call_statement | iteration_statement | return_statement;
-    def _parse_statement(self):  #
-        return self._parse_selection_statement() or\
-               self._parse_declaration_statement() or\
-               self._parse_assignment_or_call_statement() or\
-               self._parse_iteration_statement() or\
-               self._parse_return_statement() or\
+    def _parse_statement(self, statement_handler=None):  #
+        return self._parse_condition_statement(statement_handler) or\
+               self._parse_declaration_statement(statement_handler) or\
+               self._parse_assignment_or_call_statement(statement_handler) or\
+               self._parse_iteration_statement(statement_handler) or\
+               self._parse_return_statement(statement_handler) or\
                None
 
     # selection_statement ::= "if", "(", condition, ")", block,
     # ["else", block];
     # condition ::= expression;
-    def _parse_selection_statement(self):
+    def _parse_condition_statement(self, statement_handler=None):
         if self.current_token.get_type() != TokenType.IF:
             return None
         position = self.current_token.get_position()
@@ -560,10 +573,17 @@ class Parser:
             else_block = self._parse_block()
             if not else_block:
                 raise NoExecutionBlockError(position, "'else'")
-        return SelectionStatement(position, condition, if_block, else_block)
+        if statement_handler:
+            statement = ConditionalStatement(position,
+                                             condition,
+                                             if_block,
+                                             else_block)
+            statement_handler(statement)
+            return True
+        return ConditionalStatement(position, condition, if_block, else_block)
 
     # assignment_or_call_statement ::= object_access, ["=", expression ] ";";
-    def _parse_assignment_or_call_statement(self):
+    def _parse_assignment_or_call_statement(self, statement_handler=None):
         position = self.current_token.get_position()
         result = self._parse_object_access()
         if not result:
@@ -577,54 +597,57 @@ class Parser:
         self._must_be_and_consume(TokenType.SEMICOLON,
                                   MissingSemicolonError(
                                           self.current_token.get_position()))
+        if statement_handler:
+            statement_handler(result)
+            return True
         return result
 
     # object_access ::= item, {".", item};
     def _parse_object_access(self):
         position = self.current_token.get_position()
-        if (item := self._parse_item()) is None:
+        if (item := self._parse_identifier_or_call(None)) is None:  # _parse_item(None)
             return None
         while self.current_token.get_type() == TokenType.DOT:
             self.consume_token()
-            if (dot_item := self._parse_item()) is None:
+            if (dot_item := self._parse_identifier_or_call(item)) is None:  #_parse_item(item)
                 raise InvalidObjectAccessSyntaxError(
                     position,
-                    item.name()
+                    item.name
                 )
-            item = ObjectAccess(position, item, dot_item)
+            item = dot_item  # dot_item  a.b.c...
         return item
 
     # item ::= identifier_or_call, {"[", expression, "]"};
-    def _parse_item(self):
-        position = self.current_token.get_position()
-        tmp_item = self._parse_identifier_or_call()
-        while self.current_token.get_type() \
-                == TokenType.OPENING_SQUARE_BRACKET:
-            self.consume_token()
-            index = self._parse_expression()
-            if not index:
-                raise NoIndexExpressionError(position, tmp_item.name)  #
-            self._must_be_and_consume(TokenType.CLOSING_SQUARE_BRACKET,
-                                      UnexpectedTokenTypeError(
-                                          self.current_token.get_position(),
-                                          TokenType.CLOSING_SQUARE_BRACKET,
-                                          self.current_token.get_type()))
-            tmp_item = IndexedItem(position, tmp_item, index)
-        return tmp_item
+    # def _parse_item(self, parent):  # TODO: for now without indexed item
+    #     position = self.current_token.get_position()
+    #     tmp_item = self._parse_identifier_or_call(parent)  # None or parent
+    #     while self.current_token.get_type() \
+    #             == TokenType.OPENING_SQUARE_BRACKET:
+    #         self.consume_token()
+    #         index = self._parse_expression()
+    #         if not index:
+    #             raise NoIndexExpressionError(position, tmp_item.name)  #
+    #         self._must_be_and_consume(TokenType.CLOSING_SQUARE_BRACKET,
+    #                                   UnexpectedTokenTypeError(
+    #                                       self.current_token.get_position(),
+    #                                       TokenType.CLOSING_SQUARE_BRACKET,
+    #                                       self.current_token.get_type()))
+    #         tmp_item = IndexedItem(position, tmp_item, index)
+    #     return tmp_item
 
     # identifier_or_call ::= identifier, [ "(", arguments, ")" ];
 
-    def _parse_identifier_or_call(self):
+    def _parse_identifier_or_call(self, parent):
         if self.current_token.get_type() != TokenType.IDENTIFIER:
             return None
         name = self.current_token.get_value()
         position = self.current_token.get_position()
         self.consume_token()
-        if result := self._parse_function_call(position, name):
+        if result := self._parse_function_call(position, name, parent):
             return result
-        return Identifier(position, name)
+        return Identifier(position, name, parent)
 
-    def _parse_function_call(self, position, name):
+    def _parse_function_call(self, position, name, parent):
         if self.current_token.get_type() != TokenType.OPENING_BRACKET:
             return None
         self.consume_token()
@@ -634,7 +657,7 @@ class Parser:
                                       self.current_token.get_position(),
                                       TokenType.CLOSING_BRACKET,
                                       self.current_token.get_type()))
-        return FunctionCall(position, name, arguments)
+        return FunctionCall(position, name, arguments, parent)
 
     # arguments ::= expression, {",", expression};
     def _parse_arguments(self):
@@ -656,15 +679,16 @@ class Parser:
     # iteration_statement ::= "for", identifier, "in", expression, block |
     # "while", "(", condition, ")", block;
     # condition ::= expression;
-    def _parse_iteration_statement(self):
-        return self._parse_for_statement() or self._parse_while_statement()
+    def _parse_iteration_statement(self, statement_handler=None):
+        return self._parse_for_statement(statement_handler)\
+            or self._parse_while_statement(statement_handler)
 
-    def _parse_for_statement(self):
+    def _parse_for_statement(self, statement_handler=None):
         if self.current_token.get_type() != TokenType.FOR:
             return None
         position = self.current_token.get_position()
         self.consume_token()
-        iterator = self._parse_identifier()
+        iterator = self._parse_identifier_or_call(None)  # !UWAGA ZMIENIAM!
         if not iterator:
             raise NoIteratorError(position)  #
         self._must_be_and_consume(TokenType.IN,
@@ -678,9 +702,16 @@ class Parser:
         execution_block = self._parse_block()
         if not execution_block:
             raise NoExecutionBlockError(position, "for")  #
+        if statement_handler:
+            statement = ForStatement(position,
+                                     iterator,
+                                     iterable,
+                                     execution_block)
+            statement_handler(statement)
+            return True
         return ForStatement(position, iterator, iterable, execution_block)
 
-    def _parse_while_statement(self):
+    def _parse_while_statement(self, statement_handler=None):
         if self.current_token.get_type() != TokenType.WHILE:
             return None
         position = self.current_token.get_position()
@@ -701,10 +732,14 @@ class Parser:
         execution_block = self._parse_block()
         if not execution_block:
             raise NoExecutionBlockError(position, "while")  #
+        if statement_handler:
+            statement = WhileStatement(position, condition, execution_block)
+            statement_handler(statement)
+            return True
         return WhileStatement(position, condition, execution_block)
 
     # return_statement ::= "return", [expression], ";";
-    def _parse_return_statement(self):
+    def _parse_return_statement(self,  statement_handler=None):
         if self.current_token.get_type() != TokenType.RETURN:
             return None  # czy None czy nie wyrzucić errora?
         position = self.current_token.get_position()
@@ -713,13 +748,18 @@ class Parser:
         self._must_be_and_consume(TokenType.SEMICOLON,
                                   MissingSemicolonError(
                                       self.current_token.get_position()))
+        if statement_handler:
+            statement = ReturnStatement(position, expression)
+            statement_handler(statement)
+            return True
         return ReturnStatement(position, expression)
 
     # unary_term ::= ["-"], casted_term;
     def _parse_unary_term(self):
         negated = False
+        position = self.current_token.get_position()
         if self.current_token.get_type() == TokenType.MINUS:
-            position = self.current_token.get_position()
+            # position = self.current_token.get_position()
             self.consume_token()
             negated = True
         casted_term = self._parse_casted_term()

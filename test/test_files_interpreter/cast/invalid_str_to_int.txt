@@ -1,0 +1,7 @@
+func testInvalidCastStrToInt() : null {
+    str myStr = "abc";
+    int myInt = myStr as int;
+    print(myInt);
+    return;
+}
+testInvalidCastStrToInt();

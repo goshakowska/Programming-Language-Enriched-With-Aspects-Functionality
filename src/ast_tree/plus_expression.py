@@ -1,13 +1,14 @@
 from src.visitor.visitor import Visitor
-from src.ast_tree.ast_type import AstType
+# from src.ast_tree.ast_type import AstType
+from src.ast_tree.node import Node
 
 
-class PlusExpression:
+class PlusExpression(Node):
     def __init__(self, position, left_term, right_term) -> None:
         self.position = position
         self.left_term = left_term
         self.right_term = right_term
-        self.type = AstType.PLUS
+        # self.type = AstType.PLUS
 
     def __repr__(self):
         return f"PlusExpression({self.position}, {self.left_term},\
@@ -19,4 +20,4 @@ class PlusExpression:
                 other.right_term == self.right_term)
 
     def accept(self, visitor: Visitor):
-        return visitor.visit_plus_expression(self)
+        visitor.visit_plus_expression(self)

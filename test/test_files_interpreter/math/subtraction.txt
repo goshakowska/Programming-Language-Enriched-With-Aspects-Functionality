@@ -1,0 +1,5 @@
+func testSubtraction() : null {
+    print(5 - 2);
+    return;
+}
+testSubtraction();

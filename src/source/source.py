@@ -24,7 +24,9 @@ class Source:
         if self.character == '\n':
             self.line += 1
             self.column = 0
-        new_character = self.source_stream.read(1)
+        # if self.character == '\\':
+        #     return
+        new_character = self.source_stream.read(1)  # FIXME!
         if new_character == '\r':
             position = self.source_stream.tell()
             new_character = self.source_stream.read(1)

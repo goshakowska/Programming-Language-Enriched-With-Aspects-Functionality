@@ -14,6 +14,12 @@ class Lexer:
         self._token_line = 0
         self._token_column = 0
 
+        self._escape_sequences = {
+            "\\": "\\",
+            "t": "\t",
+            "'": "'",
+        }
+
         self.key_words = {
 
             "if": TokenType.IF,
@@ -22,16 +28,19 @@ class Lexer:
             "for": TokenType.FOR,
             "in": TokenType.IN,
 
-            "bool": TokenType.BOOL_TYPE,
-            "int": TokenType.INT_TYPE,
-            "float": TokenType.FLOAT_TYPE,
-            "str": TokenType.STR_TYPE,
+            "true": TokenType.BOOL,
+            "false": TokenType.BOOL,
+
+            "bool": TokenType.TYPE_BOOL,
+            "int": TokenType.TYPE_INT,
+            "float": TokenType.TYPE_FLOAT,
+            "str": TokenType.TYPE_STR,
             "null": TokenType.NULL,
 
-            "func": TokenType.FUNCTION_TYPE,
+            "func": TokenType.TYPE_FUNCTION,
             "return": TokenType.RETURN,
 
-            "aspect": TokenType.ASPECT_TYPE,
+            "aspect": TokenType.TYPE_ASPECT,
             "start": TokenType.ASPECT_ON_START,
             "end": TokenType.ASPECT_ON_END,
             "call": TokenType.ASPECT_ON_CALL,
@@ -107,19 +116,17 @@ class Lexer:
                          column=self._token_column)
 
     def handle_escape_char(self):
-        if self._character != "\\":
-            return self._character
-        self._next_char()
-        escaped_char_buffer = [self._character]
-        self._next_char()
-        if self._character in ("n", "t", "\"", "\\"):
-            escaped_char_buffer.append(self._character)
-            return escaped_char_buffer
+        if self._character == "\\":
+            self._next_char()
+            char_to_return = self._escape_sequences.get(self._character)
+            if not char_to_return:
+                raise TerminateLexerError("wrong syntax: \
+                                           unexpected symbol in string body",
+                                          self.source.get_line(),
+                                          self.source.get_column())
         else:
-            raise TerminateLexerError("wrong syntax: unexpected\
-                                       symbol in string body",
-                                      self.source.get_line(),
-                                      self.source.get_column())
+            char_to_return = self._character
+        return char_to_return
 
     def build_string(self):
 
@@ -129,7 +136,7 @@ class Lexer:
         self._next_char()
         while self._character != '"':
             if self._character == "":
-                raise TerminateLexerError("wrong syntax: unfinished string",
+                raise TerminateLexerError("wrong syntax: unterminated string",
                                           self._token_line, self._token_column)
             if len(string_to_build) == self.max_string_length:
                 raise TerminateLexerError("exceeded max string length",
@@ -137,6 +144,7 @@ class Lexer:
                                           self._token_column)
             string_to_build.append(self.handle_escape_char())
             self._next_char()
+        self._next_char()
         string_to_build = "".join(string_to_build)
         return Token(TokenType.STR, value=string_to_build,
                      line=self._token_line, column=self._token_column)
@@ -183,7 +191,7 @@ class Lexer:
     def build_keywords_or_identifier(self):
 
         buffer = []
-        while self._character.isalpha():
+        while self._character.isalpha() or self._character == "_":
             if len(buffer) == self.max_string_length:
                 TerminateLexerError("buffer overflow: \
                                     exceeded number of chars",
@@ -194,37 +202,50 @@ class Lexer:
         if ret_buffer == "":
             return None
         elif token_type := self.key_words.get(ret_buffer):
-            return Token(token_type, line=self._token_line,
-                         column=self._token_column)
+            if token_type == TokenType.BOOL:
+                return Token(TokenType.BOOL, value=bool({"true": 1, "false": 0}.get(ret_buffer)),
+                             line=self._token_line, column=self._token_column)
+            else:
+                return Token(token_type, line=self._token_line,
+                             column=self._token_column)
         else:
             return Token(TokenType.IDENTIFIER, value=ret_buffer,
                          line=self._token_line, column=self._token_column)
 
     def build_number(self):
-
-        while self._character.isdecimal():
-            is_float = False
-            number_buffer = [self._character]
-            self._next_char()
-            if self._character == ".":
-                is_float = True
-                number_buffer.append(self._character)
-                self._next_char()
-            while self._character.isdecimal():
-                number_buffer.append(self._character)
-                self._next_char()
-            number_buffer = "".join(number_buffer)
-            if is_float:
-                number_buffer = float(number_buffer)
-                return Token(TokenType.FLOAT, value=number_buffer,
-                             line=self._token_line, column=self._token_column)
-            else:
-                number_buffer = int(number_buffer)
-                return Token(TokenType.INT, value=number_buffer,
-                             line=self._token_line, column=self._token_column)
-
-        else:
+        if not self._character.isdecimal():
             return None
+        integer_part = self._build_integer_part()
+        if self._character == ".":
+            self._next_char()
+            fractional_part = self._build_fractional_part()
+            return Token(TokenType.FLOAT, value=integer_part + fractional_part,
+                         line=self._token_line, column=self._token_column)
+        else:
+            return Token(TokenType.INT, value=integer_part,
+                         line=self._token_line, column=self._token_column)
+
+    def _build_integer_part(self):
+        number_to_build = 0
+        if self._character == "0":
+            self._next_char()
+            return 0
+        while self._character.isdecimal():
+            number_value = int(self._character)
+            number_to_build = 10 * number_to_build + number_value
+            self._next_char()
+        return number_to_build
+
+    def _build_fractional_part(self):
+        float_to_build = 0
+        float_depth = 0
+        while self._character.isdecimal():
+            float_value = int(self._character)
+            float_to_build = 10 * float_to_build + float_value
+            float_depth += 1
+            self._next_char()
+        float_to_build = float_to_build / (10 ** float_depth)
+        return float_to_build
 
     def build_comment(self):
 

@@ -1,0 +1,7 @@
+func testCastIntToStr() : null {
+    int myInt = 10;
+    str myStr = myInt as str;
+    print(myStr);
+    return;
+}
+testCastIntToStr();

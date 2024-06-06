@@ -1,0 +1,7 @@
+func testGreaterThan() : null {
+    int a = 6;
+    int b = 5;
+    print(a > b);
+    return;
+}
+testGreaterThan();

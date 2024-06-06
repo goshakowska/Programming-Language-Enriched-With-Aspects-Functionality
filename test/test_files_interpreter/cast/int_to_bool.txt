@@ -1,0 +1,7 @@
+func testCastIntToBool() : null {
+    int myInt = 1;
+    bool myBool = myInt as bool;
+    print(myBool);
+    return;
+}
+testCastIntToBool();

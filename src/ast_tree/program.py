@@ -1,16 +1,15 @@
 from src.visitor.visitor import Visitor
-from src.visitor.checker_visitor import CheckerVisitor
-from src.ast_tree.ast_type import AstType
+from src.ast_tree.node import Node
 
 
-class Program:
-    def __init__(self, name: str, functions: list, aspects: list,
+class Program(Node):
+    def __init__(self, name: str, functions: dict, aspects: dict,
                  statements: list) -> None:
         self.name = name
         self.functions = functions
         self.aspects = aspects
         self.statements = statements
-        self.type = AstType.PROGRAM
+        # self.type = AstType.PROGRAM
 
     def __repr__(self):
         return f"Program({self.name}, {self.functions}, {self.aspects},\
@@ -24,7 +23,4 @@ class Program:
                 other.statements == self.statements)
 
     def accept(self, visitor: Visitor):
-        return visitor.visit_program(self)
-
-    def accept_checker(self, checker: CheckerVisitor):
-        return checker.visit_program(self)
+        visitor.visit_program(self)

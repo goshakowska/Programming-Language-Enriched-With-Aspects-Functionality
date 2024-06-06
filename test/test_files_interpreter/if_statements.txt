@@ -1,0 +1,23 @@
+func countToFive(int myCounter) : null
+{
+    int counter = myCounter;
+    int functionIterationCounter = 0;
+    str stopCondition = "don't stop!";
+    while (stopCondition != "stop" ) 
+    {
+    functionIterationCounter = functionIterationCounter + 1;
+    if (counter != 5){
+    counter = counter + 1;
+    }
+    else {
+    stopCondition = "stop";
+    }
+    }
+    print(functionIterationCounter);
+    return;
+
+}
+
+countToFive(3);
+
+countToFive(1);

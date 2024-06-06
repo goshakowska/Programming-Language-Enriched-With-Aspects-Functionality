@@ -1,0 +1,6 @@
+func testNegateFloat() : null {
+    float myFloat = -12.5;
+    print(-myFloat);
+    return;
+}
+testNegateFloat();

@@ -1,0 +1,41 @@
+func printParams( str type, str name, int value) : null {
+    str paramType = type;
+    str paramName = name;
+    str paramValue = value;
+    str textToShowFirst =  "Param of type: " + paramType;
+    str textToShowSecond = " name: " + paramName;
+    str textToShowThird = " value: "  + paramValue;
+    str textToShowForth = " was provided to function.";
+    str finalText = textToShowFirst + textToShowSecond + textToShowThird + textToShowForth;
+    return finalText;
+
+}
+
+aspect logParams: on func start like count {  
+    print(func.name);
+}  
+
+logParams.enable = False;
+
+
+bool myBool = true;
+myBool.printParams();
+
+func countToFive(int counter) : null
+{
+    str stopCondition = "don't stop!";
+    while (stopCondition != "stop" ) 
+    {
+    if (counter != 5){
+    counter = counter + 1;
+    }
+    else {
+    stopCondition = "stop";
+    }
+    }
+    return;
+
+}
+
+int myCounter = 3;
+countToFive(myCounter);

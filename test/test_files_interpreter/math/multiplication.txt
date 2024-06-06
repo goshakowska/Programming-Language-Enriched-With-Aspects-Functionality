@@ -1,0 +1,5 @@
+func testMultiplication() : null {
+    print(4 * 3);
+    return;
+}
+testMultiplication();

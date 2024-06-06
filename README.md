@@ -8,7 +8,7 @@
 ### Plan projektu
 - [x] Dokumentacja wstępna (termin: 20.03)
 - [x] Analizator leksykalny (termin 10.04)
-- [ ] Analizator składniowy + drzewo AST (termin 8.05)
+- [x] Analizator składniowy + drzewo AST (termin 8.05)
 - [ ] Zakończenie projektu (termin 5.06)
 
 ## Wprowadzenie
@@ -19,11 +19,11 @@ Celem projektu jest stworzenie języka ogólnego przeznaczenia wzbogaconego o as
 
 ### Podstawowe typy danych
 
-Język będzie składał się z dobrze znanych podstawowych typów danych - `int`, `float`, `str`, `bool`. Oprócz nich na potrzeby języka zdefiniowane zostaną nowe wbudowane typy danych: `aspect`, wraz z jego parametrem (`enabled`) oraz kontenerowe typy danych wbudowanych `param`, `intab`  ze zdefiniowanymi strukturami oraz własnymi parametrami. Warto zaznaczyć, że `param`, `intab` są wewnętrznymi strukturami, do których mamy dostęp w sposób nie bezpośredni, lecz przez:
-- parametr `func.intab` - zwraca strukturę typu `intab`, która jest tablicą przechowującą obiekty typu param dla danej funkcji. Obiekty typu `param` stanowią reprezentację parametrów wejściowych, jakie zostały podane przy wywołaniu funkcji.
-- iterację po elementach struktury `intab`  (np. w pętli `for`), bądź indeksowanie - będzie wówczas dostępny wewnętrzny element struktury `intab` - obiekt typu `param`
+Język będzie składał się z dobrze znanych podstawowych typów danych - `int`, `float`, `str`, `bool`. Oprócz nich na potrzeby języka zdefiniowane zostaną nowe wbudowane typy danych: `aspect`, wraz z jego parametrem (`enabled`) oraz kontenerowe typy danych wbudowanych `param`, `arguments`  ze zdefiniowanymi strukturami oraz własnymi parametrami. Warto zaznaczyć, że `param`, `arguments` są wewnętrznymi strukturami, do których mamy dostęp w sposób nie bezpośredni, lecz przez:
+- parametr `func.arguments` - zwraca strukturę typu `arguments`, która jest tablicą przechowującą obiekty typu param dla danej funkcji. Obiekty typu `param` stanowią reprezentację parametrów wejściowych, jakie zostały podane przy wywołaniu funkcji.
+- iterację po elementach struktury `arguments`  (np. w pętli `for`), bądź indeksowanie - będzie wówczas dostępny wewnętrzny element struktury `arguments` - obiekt typu `param`
 
-W sposób szczegółowy nowe typy danych (`intab`, `param`) zostaną opisane poniżej, w sekcji  _Typy stworzone pod kątem przeznaczenia języka_
+W sposób szczegółowy nowe typy danych (`arguments`, `param`) zostaną opisane poniżej, w sekcji  _Typy stworzone pod kątem przeznaczenia języka_
 
 ### Konwesja typów
 
@@ -47,7 +47,8 @@ Niewłaściwe są zaś:
 |----------|-------------------|----------------|-------------------|
 str → bool |```if (str) {...}```|```int myIntFlag = 2;```<br>```if (myIntFlag) {...}```<br>⇔<br>```if (true) {...} ?```|NIE|
 int → bool|```if (int) {...}```|```int myIntFlag = -1;```<br>```if (myIntFlag) {...}```<br>⇔ <br>```if (true) {...} ?```|NIE|
-str → float|str + float = float|```3.5 - 1.5 = 2;```|NIE|str → int|str + int = int|```3.5 - 1.5 = 2;```|NIE|
+str → float|str + float = float|```"3.5" - 1.5 = 2;```|NIE|
+str → int|str + int = int|```"3" - 1 = 2;```|NIE|
 
 Oprócz tego, język posiada możliwość jawnej konwersji typu zmiennej, aby móc wymusić określony typ zmiennej:
 
@@ -73,8 +74,8 @@ boolean - `bool`
 
 Oraz typy stworzone pod kątem przeznaczenia języka:
 
-inputs’ table - `intab`
-- jest to tablica, składająca się ze zbioru argumentów wywołania funkcji typu param, podobnie jak Struct w C, lecz każda zmienna - wewnętrzny element kolekcji musi być typu param
+arguments - `arguments`
+- jest to tablica, składająca się ze zbioru argumentów wywołania funkcji typu param, podobnie jak Struct w C, lecz każda zmienna - wewnętrzny element kolekcji - musi być typu param
 
 parameter - `param`
 - jest to obiekt, zawierający trójkę zmiennych - typ, nazwa oraz wartość danego argumentu wywołania funkcji - podobny do Struct w C, lecz z określonym typem kolejnych elementów wewnętrznych
@@ -83,10 +84,10 @@ parameter - `param`
 
 # Niestandardowe typy danych
 param myParam;
-intab myInputTable;
+arguments myInputTable;
 
 
-# SZABLON budowy tablicy typu intab 
+# SZABLON budowy tablicy typu arguments 
 myInputTable = [
     param: myParam,   # podstawowe typy danych
            …   # nazwa zmiennej
@@ -104,21 +105,21 @@ int funcParam = 1; # deklaracja zmiennej typu int
 
 exampleFunc(funcParam);  # zmienna ta później użyta jest w wywołaniu funkcji jako
                         # parametr wejściowy
- # tworzy się wewnętrzna struktura typu intab : [funcParam]
+ # tworzy się wewnętrzna struktura typu arguments : [funcParam]
 
 # zawierająca jeden element - jedną zmienną param, która posiada taką trójkę
 # informacji: [int, funcParam, 1]
 
 /* 
 
-UWAGA - nie można explicite stworzyć (zadeklarować oraz zainicjować) zmiennych typu intab oraz param - powyższy przykład ilustruje, jakie obiekty tworzą się podczas przekazania zmiennych wywołania funkcji oraz w jaki sposób zorganizowana jest ich struktura.
+UWAGA - nie można explicite stworzyć (zadeklarować oraz zainicjować) zmiennych typu arguments oraz param - powyższy przykład ilustruje, jakie obiekty tworzą się podczas przekazania zmiennych wywołania funkcji oraz w jaki sposób zorganizowana jest ich struktura.
 */
 ```
 
-Zarówno typ `intab` jak i typ `param` posiadają wbudowane atrybuty, do których możemy się odwołać, przypisać nowe wartości.
+Zarówno typ `arguments` jak i typ `param` posiadają wbudowane atrybuty, do których możemy się odwołać, przypisać nowe wartości.
 
-Dla `intab`:
-- atrybut `count` - zwracający wartość typu int, mówiącą o liczbie obiektów typu param w tablicy intab (o liczbie parametrów wejściowych wywoływanej funkcji)
+Dla `arguments`:
+- atrybut `count` - zwracający wartość typu int, mówiącą o liczbie obiektów typu param w tablicy arguments (o liczbie parametrów wejściowych wywoływanej funkcji)
 
 
 Przykład:
@@ -133,19 +134,19 @@ exampleFunc(example1, example2, example3);  # wywołanie funkcji z parametrami
                                             # wejściowymi (która została gdzieś
                                             # wcześniej zdefiniowana)
 
-/* wewnątrz funkcji stworzy się jedna struktura intab exampleInputTable,
+/* wewnątrz funkcji stworzy się jedna struktura arguments exampleInputTable,
 przechowująca parametry: param exampleParam1 - parametr, który zawiera informacje 
 o zmiennej example1 (o jej typie (int), nazwie (example1) i wartości (1)), param exampleParam2,
 param exampleParam3 (analogicznie jak w exampleParam1). Warto zaznaczyć, że są to struktury wewnętrzne,
 których jawnie nie możemy zainicjować w kodzie. Tak, jak poniżej zostało to pokazane,
-do struktury intab można dostać się tylko przez atrybut funkcji o tejże samej nazwie. */
+do struktury arguments można dostać się tylko przez atrybut funkcji o tejże samej nazwie. */
 
-str param_number = exampleFunc.intab.count as str;
+str param_number = exampleFunc.arguments.count as str;
 print(param_number);
 
 >>>3
 
-# bo intab exampleInputTable = [exampleParam1, exampleParam2, exampleParam3]
+# bo arguments exampleInputTable = [exampleParam1, exampleParam2, exampleParam3]
 ```
 
 Dla `param`:
@@ -156,9 +157,9 @@ Dla `param`:
 Przykład (kontynuacja wcześniejszego kodu):
 
 ```
-str exampleParamType =  exampleFunc.intab[0].type;
-str exampleParamName =  exampleFunc.intab[0].name; 
-str exampleParamValue =  exampleFunc.intab[0].value as str; # dochodzi do
+str exampleParamType =  exampleFunc.arguments[0].type;
+str exampleParamName =  exampleFunc.arguments[0].name; 
+str exampleParamValue =  exampleFunc.arguments[0].value as str; # dochodzi do
                                                             # konwersji typu na str
 print(exampleParamType);
 >>> int
@@ -271,7 +272,7 @@ func exampleFunction(type variableName): returnType  # jeśli funkcja nic nie zw
         }
 
 ```
-Funkcja posiada dwa wbudowane atrybuty: `retval` oraz `intab`. `retval` odpowiada wartości zwracanej przez funkcję, zaś `intab` - tablicy parametrów wejściowych wywołania funkcji.
+Funkcja posiada dwa wbudowane atrybuty: `retval` oraz `arguments`. `retval` odpowiada wartości zwracanej przez funkcję, zaś `arguments` - tablicy parametrów wejściowych wywołania funkcji.
 
 Deklaracja aspektu:
 
@@ -315,8 +316,8 @@ aspect logParams: on start like "write"
     str funcName = func.name;
     str secondPrompt = ", has provided the input parameters:\n";
     str inputParamsPrompt = "";
-    int count = func.intab.count;
-    for param in func.intab;
+    int count = func.arguments.count;
+    for param in func.arguments;
     {
         count = count - 1;
         str namePrompt = "name: " + param.name;
@@ -623,3 +624,17 @@ ERR! [3: 10]: expected 'int' got 'bool' in return
 ### Opis sposobu testowania
 
 Cały projekt - jego poprawność, spójność itd., będzie testowana głównie za pomocą testów jednostkowych (gdzie w izolowany sposób będzie sprawdzana poprawność implementacji komponentów projektów, takich jak np. analizator leksykalny, składniowy, semantyczny) oraz testów integracyjnych (gdzie sprawdzana będzie poprawność komunikacji pomiędzy dwoma komponentami na ich “miejscach styku”). Wszystko to ma służyć zapewnieniu sprawnego przepływu pomiędzy odpowiednimi fazami kompilacji.
+
+### Aktualizacja dokumentacji
+
+Zaimplementowana została założona funkcjonalność - m.in. typy wbudowane aspektowość.
+W ramach interpretacji danego pliku wejściowego w terminalu należy wpisać python3 main.py _fileName_ -p (wówczas w terminalu zostanie wyprintowane drzewo AST). Interpreter analizuje nie tylko wyrażenia znajdujące się wewnątrz wywołań funkcji, ale też te globalne.
+
+Podczas implementacji zmieniła się składnia języka, dla przykładu:
+Deklaracja aspektu: 
+```
+aspect countFunctionCalls: on func call like count {  # początek deklaracji ma inną kolejność słów kluczowych
+    print("Function of a name: ", function.name, " was called: ", function.callCount, " times.");
+}
+```
+Zmienna `func` została nazwana `function` - aby nie doszło do konfliktu nazw (z typem `func`).

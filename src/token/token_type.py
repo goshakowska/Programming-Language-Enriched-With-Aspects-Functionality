@@ -40,21 +40,21 @@ class TokenType(Enum):
     FOR = auto()  # for
     IN = auto()  # in
 
-    BOOL_TYPE = auto()  # bool
+    TYPE_BOOL = auto()  # bool
     BOOL = auto()  # true, false
-    INT_TYPE = auto()  # int
+    TYPE_INT = auto()  # int
     INT = auto()  # 1
-    FLOAT_TYPE = auto()  # float
+    TYPE_FLOAT = auto()  # float
     FLOAT = auto()  # 1.1
-    STR_TYPE = auto()  # str
+    TYPE_STR = auto()  # str
     STR = auto()  # "my str"
     NULL = auto()  # null, return type of function
     COMMENT = auto()
 
-    FUNCTION_TYPE = auto()  # func  # FUNCTION TODO
+    TYPE_FUNCTION = auto()  # func  # FUNCTION TODO
     RETURN = auto()  # return
 
-    ASPECT_TYPE = auto()  # aspect  # ASPECT TODO
+    TYPE_ASPECT = auto()  # aspect  # ASPECT TODO
     ASPECT_ON_START = auto()  # start
     ASPECT_ON_END = auto()  # end
     ASPECT_ON_CALL = auto()  # call

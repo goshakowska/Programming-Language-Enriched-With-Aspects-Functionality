@@ -1,0 +1,7 @@
+func testCastBoolToStr() : null {
+    bool myBool = true;
+    str myStr = myBool as str;
+    print(myStr);
+    return;
+}
+testCastBoolToStr();

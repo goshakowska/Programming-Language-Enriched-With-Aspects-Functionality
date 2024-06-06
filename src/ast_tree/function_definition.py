@@ -1,15 +1,16 @@
 from src.visitor.visitor import Visitor
 from src.ast_tree.ast_type import AstType
+from src.ast_tree.node import Node
 
 
-class FunctionDefinition:
+class FunctionDefinition(Node):
     def __init__(self, position, name, params, block, return_type) -> None:
         self.position = position
         self.name = name
         self.params = params
         self.block = block
         self.return_type = return_type
-        self.type = AstType.FUNCTION
+        self.type = AstType.TYPE_FUNCTION
 
     def __repr__(self):
         return f"FunctionDefinition({self.position}, {self.name},\
@@ -23,4 +24,4 @@ class FunctionDefinition:
                 other.block == self.block)
 
     def accept(self, visitor: Visitor):
-        return visitor.visit_function_definition(self)
+        visitor.visit_function_definition(self)
