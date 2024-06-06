@@ -165,6 +165,13 @@ class Interpreter(Visitor):
         instance._set_updating(False)
 
     def visit_aspect_definition(self, node: AspectDefinition):
+        AST_TYPE_TO_STR = {
+            AstType.TYPE_INT: "int",
+            AstType.TYPE_FLOAT: "float",
+            AstType.TYPE_BOOL: "bool",
+            AstType.TYPE_STR: "str",
+            AstType.NULL: "null"
+        }
         if not self._check_if_is_target(node, self._last_result[0]):
             return None
         (
@@ -175,17 +182,20 @@ class Interpreter(Visitor):
             return_type
         ) = self.get_last_result()  # czy te nawiasy nie popsują?
 
-        arguments = Args(
-            Param(param_name, provided_value, provided_value.type)
-            for param_name, provided_value in zip(input_parameters,
-                                                  provided_arguments)
-        ) if input_parameters else None
+        provided_params = [Param(Value(param_name.name, param_name.type), provided_value, Value(AST_TYPE_TO_STR.get(provided_value.type), provided_value.type)) for param_name, provided_value in zip(input_parameters, provided_arguments)]
+
+        arguments = Args(provided_params) if provided_params else None
+        # arguments = Args(
+        #     Param(param_name, provided_value, provided_value.type)
+        #     for param_name, provided_value in zip(input_parameters,
+        #                                           provided_arguments)
+        # ) if input_parameters else None
 
         targeted_function = FunctionValue(
-            name=function_name,
-            args=arguments,
-            return_value=return_value,
-            return_type=return_type
+            name=Value(function_name, AstType.TYPE_STR),
+            args=arguments if arguments else None,
+            return_value=return_value if return_value else None,
+            return_type=Value(AST_TYPE_TO_STR.get(return_type), AstType.TYPE_STR)
         )
 
         if (aspect_value := self.environment.check_for_global_aspect(node.name)) is not None:
