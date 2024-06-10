@@ -9,7 +9,7 @@
 - [x] Dokumentacja wstępna (termin: 20.03)
 - [x] Analizator leksykalny (termin 10.04)
 - [x] Analizator składniowy + drzewo AST (termin 8.05)
-- [ ] Zakończenie projektu (termin 5.06)
+- [x] Zakończenie projektu (termin 5.06)
 
 ## Wprowadzenie
 
@@ -527,17 +527,17 @@ multiplicative_term ::= unary_term, { ("*" | "/" ), unary_term};
 
 unary_term ::= ["-"], casted_term;
 
-casted_term ::= term, {"as", type};
+casted_term ::= term, ["as", type];
 
 term ::= literal
 		| object_access
 		| "(", expression, ")";
 		
-object_access ::= item, {".", item};
-
-item ::= identifier_or_call, {"[", int, "]"};
+object_access ::= identifier, {".", identifier};
 		
-identifier_or_call ::= identifier, [ "(", parameters, ")" ];
+identifier_or_call ::= identifier, [ "(", arguments, ")" ];
+
+arguments ::= expression, {"," expression};
 
 literal ::= int | float | bool | string;
 

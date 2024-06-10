@@ -305,3 +305,13 @@ class UnsupportedObjectAccessTypeError(Exception):
 
     def __str__(self):
         return f"ERR! [{self.position}]: {self.access_name} cannot be evaluated on the object {self.object_name}."
+    
+
+class MaximumNestingLevelError(Exception):
+
+    def __init__(self, position, nesting_level) -> None:
+        self.position = position
+        self.nesting_level = nesting_level
+
+    def __str__(self):
+        return f"ERR! [{self.position}]: Maximum nesting level of {self.nesting_level} exceeded."

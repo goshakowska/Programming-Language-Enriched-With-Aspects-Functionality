@@ -23,6 +23,7 @@ from src.visitor.interpreter_errors import ReturnInAspectDefinitionError
 from src.visitor.interpreter_errors import ObjectAttributeError
 from src.visitor.interpreter_errors import NotInitializedVariableAccessError
 from src.visitor.interpreter_errors import UnsupportedObjectAccessTypeError
+from src.visitor.interpreter_errors import MaximumNestingLevelError
 
 from src.visitor.visitor import Visitor
 from src.ast_tree.and_expression import AndExpression
@@ -62,7 +63,7 @@ from src.visitor.environment import Environment, Value
 
 from src.visitor.environment import AspectValue, FunctionValue, Args, Param
 
-ITERATION_LIMIT = 100
+import sys
 
 
 class Interpreter(Visitor):
@@ -78,6 +79,8 @@ class Interpreter(Visitor):
 
         self._last_result = None
         self._return_flag = False
+        sys.setrecursionlimit(10**6)
+        self.maximum_nesting_level = 1000
 
         self.EMBEDDED_FUNCTIONS = {"print": PrintFunction()}
         self.add_embedded_functions_to_program(self.EMBEDDED_FUNCTIONS)
@@ -238,7 +241,7 @@ class Interpreter(Visitor):
                                  return_value: Any = None):
 
         # self._update_enabled_aspects()
-        for aspect_name in self.enabled_aspects:
+        for aspect_name in self.enabled_aspects:  # list comprehension
             if self.aspects.get(aspect_name).event in aspect_types:
                 self.set_last_result(
                     [node.name,
@@ -288,8 +291,24 @@ class Interpreter(Visitor):
     STATEMENTS
     """
     def visit_identifier(self, node: Identifier) -> None:
-        value = self.environment.get_variable(node.name)
-        self.set_last_result(value)
+        parent = None
+        if node.parent is not None:
+            try:
+                node.parent.accept(self)
+                parent = self.get_last_result()
+            except NotInitializedVariableAccessError:
+                NotInitializedVariableAccessError(node.position,
+                                                  node.parent,
+                                                  node.name)
+
+            if hasattr(parent, node.name):
+                attribute = getattr(parent, node.name)
+                self.set_last_result(attribute)
+            else:
+                raise ObjectAttributeError(node.position, parent, node.name)
+        else:
+            value = self.environment.get_variable(node.name)
+            self.set_last_result(value)
 
     def _in_functions_definitions(self, name: str) -> bool:
         return name in self.functions
@@ -302,8 +321,12 @@ class Interpreter(Visitor):
         self.set_last_result(input_parameters)
 
     def visit_function_call(self, node: FunctionCall):
+        if node.parent:
+            raise ObjectAttributeError(node.position, node.parent, node.name)
         if not (function := self.functions.get(node.name)):
             raise UndefinedFunctionError(node.position, node.name)
+        if self.environment.nesting_level == self.maximum_nesting_level:
+            raise MaximumNestingLevelError(node.position, self.maximum_nesting_level)
         self.prepare_arguments_for_function_call(node.arguments)
         function.accept(self)
 
@@ -324,32 +347,6 @@ class Interpreter(Visitor):
             new_value = self.get_last_result()
             variable_value.set_value(new_value)
 
-    def visit_object_access(self, node: Identifier | FunctionCall):
-
-        parent = None
-        if node.parent is not None:
-            try:
-                parent = self.environment.get_variable(node.parent.name)
-            except NotInitializedVariableAccessError:
-                NotInitializedVariableAccessError(node.position,
-                                                  node.parent,
-                                                  node.name)
-
-            if hasattr(parent, node.name):
-                attribute = getattr(parent, node.name)
-                self.set_last_result(attribute)
-            else:
-                raise ObjectAttributeError(node.position, parent, node.name)
-        else:
-            if isinstance(node, Identifier):
-                self.visit_identifier(node)
-            elif isinstance(node, FunctionCall):
-                self.visit_function_call(node)
-            else:
-                raise UnsupportedObjectAccessTypeError(node.position,
-                                                       node.parent,
-                                                       node.name)
-
     def visit_conditional_statement(self, node: ConditionalStatement):
 
         node.expression.accept(self)
@@ -360,15 +357,15 @@ class Interpreter(Visitor):
                 node.else_block.accept(self)
 
     def visit_for_statement(self, node: ForStatement):
-
-        node.iterable.accept(self)
-        iterable = self.get_last_result()
-        node.iterator.accept(self)
-        if isinstance(iterable, list):
-            for _ in iterable:
-                node.execution_block.accept(self)
-                if self._return_flag is True:
-                    break
+        raise NotImplementedError()
+        # node.iterable.accept(self)
+        # iterable = self.get_last_result()
+        # node.iterator.accept(self)
+        # if isinstance(iterable, list):
+        #     for _ in iterable:
+        #         node.execution_block.accept(self)
+        #         if self._return_flag is True:
+        #             break
 
     def visit_while_statement(self, node: WhileStatement):
 
@@ -376,8 +373,8 @@ class Interpreter(Visitor):
         condition_evaluation = self.get_last_result()
         iteration_counter = 0
         while condition_evaluation.value:
-            if iteration_counter == ITERATION_LIMIT:
-                raise RuntimeError(node.position, ITERATION_LIMIT)
+            # if iteration_counter == ITERATION_LIMIT:
+            #     raise RuntimeError(node.position, ITERATION_LIMIT)
             node.execution_block.accept(self)
             if self._return_flag is True:
                 break

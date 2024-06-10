@@ -163,10 +163,6 @@ class Parser:
                 self._parse_statement(
                 lambda statement_to_add:
                 statements.append(statement_to_add)
-                # if declaration_name not in declaration_names
-                # else raise_(StatementRedefinitionError(
-                #     self.current_token.get_position(),
-                #     declaration_to_add.name))
                     ) \
                 or self._parse_function_declaration(
                 lambda function_to_add:
@@ -201,15 +197,15 @@ class Parser:
                                           MissingSemicolonError(
                                             self.current_token.get_position()))
                 if statement_handler:
-                    declaration = AssignmentStatement(position,  # !UWAGA - tu zmieniłam kolejność
+                    declaration = AssignmentStatement(position,
                                                       expression,
                                                       declaration)
-                    # declaration_name = declaration.expression.name
+
                     statement_handler(declaration)
                     return True
-                return AssignmentStatement(position, expression, declaration)  # !UWAGA - tu zmieniłam
+                return AssignmentStatement(position, expression, declaration)
             if statement_handler:
-                # declaration_name = declaration.name
+
                 statement_handler(declaration)
                 return True
             return declaration
@@ -308,7 +304,7 @@ class Parser:
                                       aspect_name,
                                       TokenType.LIKE
                                   ))
-        if (regular_expression := self._parse_identifier_or_call(None)) is None:  # !UWAGA ZMIENIAM!
+        if (regular_expression := self._parse_identifier_or_call(None)) is None:
             raise InvalidAspectPatternError(
                 self.current_token.get_position(),
                 aspect_name)
@@ -605,38 +601,19 @@ class Parser:
     # object_access ::= item, {".", item};
     def _parse_object_access(self):
         position = self.current_token.get_position()
-        if (item := self._parse_identifier_or_call(None)) is None:  # _parse_item(None)
+        if (item := self._parse_identifier_or_call(None)) is None:
             return None
         while self.current_token.get_type() == TokenType.DOT:
             self.consume_token()
-            if (dot_item := self._parse_identifier_or_call(item)) is None:  #_parse_item(item)
+            if (dot_item := self._parse_identifier_or_call(item)) is None:
                 raise InvalidObjectAccessSyntaxError(
                     position,
                     item.name
                 )
-            item = dot_item  # dot_item  a.b.c...
+            item = dot_item 
         return item
 
-    # item ::= identifier_or_call, {"[", expression, "]"};
-    # def _parse_item(self, parent):  # TODO: for now without indexed item
-    #     position = self.current_token.get_position()
-    #     tmp_item = self._parse_identifier_or_call(parent)  # None or parent
-    #     while self.current_token.get_type() \
-    #             == TokenType.OPENING_SQUARE_BRACKET:
-    #         self.consume_token()
-    #         index = self._parse_expression()
-    #         if not index:
-    #             raise NoIndexExpressionError(position, tmp_item.name)  #
-    #         self._must_be_and_consume(TokenType.CLOSING_SQUARE_BRACKET,
-    #                                   UnexpectedTokenTypeError(
-    #                                       self.current_token.get_position(),
-    #                                       TokenType.CLOSING_SQUARE_BRACKET,
-    #                                       self.current_token.get_type()))
-    #         tmp_item = IndexedItem(position, tmp_item, index)
-    #     return tmp_item
-
     # identifier_or_call ::= identifier, [ "(", arguments, ")" ];
-
     def _parse_identifier_or_call(self, parent):
         if self.current_token.get_type() != TokenType.IDENTIFIER:
             return None
@@ -688,7 +665,7 @@ class Parser:
             return None
         position = self.current_token.get_position()
         self.consume_token()
-        iterator = self._parse_identifier_or_call(None)  # !UWAGA ZMIENIAM!
+        iterator = self._parse_identifier_or_call(None)
         if not iterator:
             raise NoIteratorError(position)  #
         self._must_be_and_consume(TokenType.IN,
@@ -741,7 +718,7 @@ class Parser:
     # return_statement ::= "return", [expression], ";";
     def _parse_return_statement(self,  statement_handler=None):
         if self.current_token.get_type() != TokenType.RETURN:
-            return None  # czy None czy nie wyrzucić errora?
+            return None
         position = self.current_token.get_position()
         self.consume_token()
         expression = self._parse_expression()
