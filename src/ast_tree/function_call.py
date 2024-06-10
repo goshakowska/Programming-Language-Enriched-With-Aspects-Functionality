@@ -21,4 +21,4 @@ class FunctionCall(Node):
                 and other.parent == self.parent)
 
     def accept(self, visitor: Visitor):
-        visitor.visit_object_access(self)
+        visitor.visit_function_call(self)

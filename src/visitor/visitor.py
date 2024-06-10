@@ -140,9 +140,9 @@ class Visitor:
     def visit_not_equal_expression(self, node: "NotEqualExpression"):
         pass
 
-    @abstractmethod
-    def visit_object_access(self, node: "ObjectAccess"):
-        pass
+    # @abstractmethod
+    # def visit_object_access(self, node: "ObjectAccess"):
+    #     pass
 
     @abstractmethod
     def visit_or_expression(self, node: "OrExpression"):
